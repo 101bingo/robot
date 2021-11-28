@@ -1,10 +1,15 @@
-from logging import debug
 from fastapi import FastAPI,WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 
+import random
 import uvicorn
 
+from router.api import api_router
+
 app = FastAPI()
+# 入口添加api_router
+app.include_router(api_router, prefix="/api")
+
 
 origins = [
     'http://localhost'
@@ -18,10 +23,6 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-@app.get('/test')
-async def test_fun():
-    return {'msg':'靓仔，雷猴','code':'success'}
-
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
@@ -32,5 +33,5 @@ async def websocket_endpoint(websocket: WebSocket):
 
 if __name__ == "__main__":
     HOST = '0.0.0.0'
-    PORT = 6006
+    PORT = 6006 
     uvicorn.run(app='main:app', host=HOST, port=PORT, reload=True, debug=True, workers=1)
