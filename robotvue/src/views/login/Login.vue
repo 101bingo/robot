@@ -63,7 +63,7 @@ export default {
       if (this.username === "admin" && this.password === "123456") {
         this.$router.push("/home");
       } else {
-        alert("用户名或密码错误");
+        alert("用户名或密码错误123");
       }
     },
   },
