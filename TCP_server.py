@@ -1,6 +1,6 @@
 from socket import AF_INET, SOCK_STREAM, socket
 
-ip_address = '42.193.138.254'
+ip_address = ''
 server_port = 6222
 
 tcp_server = socket(AF_INET, SOCK_STREAM)
