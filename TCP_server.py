@@ -32,7 +32,7 @@ def dispose_client_request(tcp_client, client_address):
 
         #有消息就回复，消息长度为0即说明用户下线
         if recv_data:
-            print('receve_data:', recv_data.decode('utf-8'))
+            print('receve_data:', recv_data)
         #     pass
         # else:
         #     tcp_client.close()
