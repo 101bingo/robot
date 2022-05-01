@@ -1,17 +1,8 @@
 <template>
   <!-- <h1>home page</h1> -->
-  <el-container>
+  <!-- <el-container>
     <el-aside width="200px" style="background-color: blue">
       <el-menu :default-openeds="['1']">
-        <!-- <el-submenu index="1">
-          <template>
-            <i class="el-icon-s-home"></i>
-            Home
-          </template>
-          <el-menu-item-group>
-            <el-menu-item>test1</el-menu-item>
-          </el-menu-item-group>
-        </el-submenu> -->
         <el-menu-item-group v-for="(item, i) in menuList" v-bind:key="i">
           <el-menu-item><i :class="item.icon"></i>{{ item.name }}</el-menu-item>
         </el-menu-item-group>
@@ -32,7 +23,10 @@
         </div>
       </el-main>
     </el-container>
-  </el-container>
+  </el-container> -->
+  <div>
+    <router-view/>
+  </div>
 </template>
 
 

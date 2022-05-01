@@ -1,6 +1,6 @@
 from socket import AF_INET, SOCK_STREAM, socket
 
-ip_address = ''
+ip_address = '42.193.138.254'
 server_port = 6222
 
 tcp_server = socket(AF_INET, SOCK_STREAM)
@@ -13,12 +13,25 @@ try:
     while True:
         conn, client_addr = tcp_server.accept()
         try:
+            
             while True:
                 recv = conn.recv(1024)
                 if recv:
                     print('客户端{0}:{1}'.format(client_addr, recv))
+                else:
+                    conn.send('ping'.encode('utf-8'))
         finally:
             conn.close()
 finally:
     tcp_server.close()
 
+# tcp_client = socket(AF_INET, SOCK_STREAM)
+
+# tcp_client.connect((ip_address, server_port))
+
+# try:
+#     data = 'test'
+#     tcp_client.send(data.encode('utf-8'))
+
+# finally:
+#     tcp_client.close()
