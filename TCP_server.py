@@ -1,44 +1,74 @@
 from socket import AF_INET, SO_REUSEADDR, SOCK_STREAM, SOL_SOCKET,socket
-import threading
 from collections import deque
-# ip_address = '42.193.138.254'
-# server_port = 6222
-
-# tcp_server = socket(AF_INET, SOCK_STREAM)
-
-# tcp_server.bind((ip_address, server_port))
-
-# tcp_server.listen(3)
-
-# try:
-#     while True:
-#         conn, client_addr = tcp_server.accept()
-#         try:
-#             while True:
-#                 recv = conn.recv(1024)
-#                 if recv:
-#                     print('客户端{0}:{1}'.format(client_addr, recv))
-#         finally:
-#             conn.close()
-# finally:
-#     tcp_server.close()
+from datetime import datetime
+import threading
+import asyncio
+import websockets
+import requests
+import json
 
 msg_dequeue = deque()
+live_data = deque()
+
+async def recv_cmd_ws(websocket):
+    while True:
+        recv_text = await websocket.recv()
+        if recv_text:
+            print('recv_text:', recv_text)
+            msg_dequeue.append(recv_text)
+
+async def ws_connected():
+    async with websockets.connect('ws://127.0.0.1:8082/sendcmd') as ws:
+        await recv_cmd_ws(ws)
+
+async def ws_live_data(msg):
+    async with websockets.connect('ws://127.0.0.1:8082/ws') as ws:
+        await ws.send(msg)
+
+def save_oxygen_data(oxygen, temperature):
+    """ 保存溶氧数据到数据库，请求后端 """
+    body={
+        'oxygen':oxygen,
+        'temperature':temperature
+    }
+    res = requests.post(url='http://localhost:8082/api/fish/addData',headers={'accept': 'application/json'},\
+                        data=json.dumps(body))
+    print('res:', res)
+
+def send_live_data_to_background(oxygen, temperature):
+    """ 同步实时数据到后台，方便手机端实时显示溶氧数据 """
+    body = {
+        'oxygen':oxygen,
+        'temperature':temperature
+    }
+    res = requests.post(url='http://localhost:8082/api/fish/sendOxygen',headers={'accept': 'application/json'},\
+                        data=json.dumps(body))
+    print('res:', res)
 
 def dispose_client_request(tcp_client, client_address):
+    start_time = datetime.now()
     #循环接受或发送数据
     while True:
-        recv_data = tcp_client.recv(1024)
+        run_time = datetime.now()
+        recv_data = tcp_client.recv(256)
 
-        #有消息就回复，消息长度为0即说明用户下线
+        #有消息处理
         if recv_data:
-            print('receve_data:', recv_data)
-        #     pass
-        # else:
-        #     tcp_client.close()
-        #     break
+            res = [int(i) for i in recv_data]
+            print('receve_data:', res)
+            oxygen = float(res[0])
+            temperature = float(res[1])
+            send_live_data_to_background(oxygen, temperature)
+            if run_time.minute-start_time.minute==1:
+                start_time = run_time
+                save_oxygen_data(oxygen, temperature)
+        
+        #发送后台命令
+        if msg_dequeue:
+            msg = msg_dequeue.popleft()
+            tcp_client.send(msg)
 
-if __name__ == '__main__':
+def main_proc():
     IP_ADDRESS = '42.193.138.254'
     SERVER_PORT = 6222
     tcp_server = socket(AF_INET, SOCK_STREAM)
@@ -62,4 +92,13 @@ if __name__ == '__main__':
 
         #启动子线程
         thd.start()
+
+if __name__ == '__main__':
+    new_loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(new_loop)
+    # asyncio.get_event_loop().run_until_complete(ws_connected())
+    asyncio.get_event_loop().run_until_complete(main_proc())
+    # main_proc()
+
+    
 
