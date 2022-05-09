@@ -67,5 +67,5 @@ async def websocket_send(websocket: WebSocket):
 
 if __name__ == "__main__":
     HOST = '0.0.0.0'
-    PORT = 6222
+    PORT = 8002
     uvicorn.run(app='main:app', host=HOST, port=PORT, reload=True, debug=True, workers=1)
