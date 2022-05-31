@@ -1,6 +1,7 @@
 
 from typing import List
-from fastapi import WebSocket
+from fastapi import WebSocket, WebSocketDisconnect
+from loguru import logger
 
 class ConnectionManager:
     def __init__(self):
@@ -19,6 +20,10 @@ class ConnectionManager:
     async def broadcast(self, message: dict):
         for connection in self.active_connections:
             # await connection.send_text(message)
-            await connection.send_json(message)
+            try:
+                await connection.send_json(message)
+            except Exception as e:
+                logger.error(str(e))
+                self.disconnect(connection)
 
 manager = ConnectionManager()

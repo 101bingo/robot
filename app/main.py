@@ -55,19 +55,15 @@ app.add_middleware(
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
-    try:
-        while True:
-            time.sleep(1)
-            oxygen = round(random.uniform(3.0,20.0),1)
-            temperature = round(random.uniform(20.0,30.0),1)
-            data_dict = {
-                'oxygen':oxygen,
-                'temperature':temperature
-            }
-            await manager.broadcast(data_dict)
-    except WebSocketDisconnect:
-        manager.disconnect(websocket)
-
+    while True:
+        time.sleep(1)
+        oxygen = round(random.uniform(3.0,20.0),1)
+        temperature = round(random.uniform(20.0,30.0),1)
+        data_dict = {
+            'oxygen':oxygen,
+            'temperature':temperature
+        }
+        await manager.broadcast(data_dict)
 
 @app.websocket("/sendcmd")
 async def websocket_send(websocket: WebSocket):
