@@ -56,7 +56,7 @@ def dispose_client_request(tcp_client, client_address):
         recv_data = tcp_client.recv(256)
 
         ws.ping()
-        ws_res = ws.recv_frame()
+        ws_res = ws.recv_data_frame()
         logger.debug(f'recv_fram:{ws_res}')
         if ws_res.opcode == 9:
             ws.pong()
