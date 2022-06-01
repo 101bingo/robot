@@ -24,6 +24,6 @@ class ConnectionManager:
                 await connection.send_json(message)
             except Exception as e:
                 logger.error(str(e))
-                self.disconnect(connection)
+                self.active_connections.remove(connection)
 
 manager = ConnectionManager()

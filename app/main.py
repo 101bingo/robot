@@ -30,42 +30,44 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    while True:
-        # data = await websocket.receive_text()
-        # await websocket.send_text(f"hello:{data}")
-        time.sleep(1)
-        oxygen = round(random.uniform(3.0,20.0),1)
-        temperature = round(random.uniform(20.0,30.0),1)
-        data_dict = {
-            'oxygen':oxygen,
-            'temperature':temperature
-        }
-        await websocket.send_json(data_dict)
-        if live_data_deque:
-            print(11111111111111)
-            msg = live_data_deque.popleft()
-            print('msg:', msg)
-            await websocket.send_json(data_dict)
-        else:
-            await asyncio.sleep(0.01)
-
 # @app.websocket("/ws")
 # async def websocket_endpoint(websocket: WebSocket):
-#     await manager.connect(websocket)
+#     await websocket.accept()
 #     while True:
+#         # data = await websocket.receive_text()
+#         # await websocket.send_text(f"hello:{data}")
 #         time.sleep(1)
-#         # await websocket.receive_text()
 #         oxygen = round(random.uniform(3.0,20.0),1)
 #         temperature = round(random.uniform(20.0,30.0),1)
 #         data_dict = {
 #             'oxygen':oxygen,
 #             'temperature':temperature
 #         }
-#         await manager.broadcast(data_dict)
-#         await asyncio.sleep(0.1)
+#         await websocket.send_json(data_dict)
+#         if live_data_deque:
+#             print(11111111111111)
+#             msg = live_data_deque.popleft()
+#             print('msg:', msg)
+#             await websocket.send_json(data_dict)
+#         else:
+#             await asyncio.sleep(0.01)
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await manager.connect(websocket)
+    try:
+        while True:
+            time.sleep(1)
+            await websocket.receive_text()
+            oxygen = round(random.uniform(3.0,20.0),1)
+            temperature = round(random.uniform(20.0,30.0),1)
+            data_dict = {
+                'oxygen':oxygen,
+                'temperature':temperature
+            }
+            await manager.broadcast(data_dict)
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
 
 @app.websocket("/sendcmd")
 async def websocket_send(websocket: WebSocket):
