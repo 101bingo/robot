@@ -37,14 +37,14 @@ async def websocket_endpoint(websocket: WebSocket):
     while True:
         # data = await websocket.receive_text()
         # await websocket.send_text(f"hello:{data}")
-        time.sleep(1)
-        oxygen = round(random.uniform(3.0,20.0),1)
-        temperature = round(random.uniform(20.0,30.0),1)
-        data_dict = {
-            'oxygen':oxygen,
-            'temperature':temperature
-        }
-        await websocket.send_json(data_dict)
+        # time.sleep(1)
+        # oxygen = round(random.uniform(3.0,20.0),1)
+        # temperature = round(random.uniform(20.0,30.0),1)
+        # data_dict = {
+        #     'oxygen':oxygen,
+        #     'temperature':temperature
+        # }
+        # await websocket.send_json(data_dict)
         if live_data_deque:
             print(11111111111111)
             msg = live_data_deque.popleft()

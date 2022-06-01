@@ -68,7 +68,8 @@ def dispose_client_request(tcp_client, client_address):
             try:
                 res = [int(i) for i in recv_data]
                 print('receve_data:', res)
-                ws.send(str(res))
+                # ws.send(str(res))
+                ws.send(recv_data)
                 print('websocket send success!')
                 # oxygen = float(res[0])
                 # temperature = float(res[1])
