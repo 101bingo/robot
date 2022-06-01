@@ -54,18 +54,17 @@ def dispose_client_request(tcp_client, client_address):
     while True:
         run_time = datetime.now()
         recv_data = tcp_client.recv(256)
-
-        ws.ping()
-        ws_res = ws.recv_data_frame(control_frame=True)
-        # ws_res = ws.recv_frame()
-        logger.debug(f'recv_fram:{ws_res}')
-        # if ws_res == 9:
-        #     ws.pong()
-        # elif not ws_res.opcode == 10:
-        #     ws.connect('ws://127.0.0.1:8002/livedata')
-        #有消息处理
-        if recv_data:
-            try:
+        try:
+            ws.ping()
+            ws_res = ws.recv_data_frame(control_frame=True)
+            # ws_res = ws.recv_frame()
+            logger.debug(f'recv_fram:{ws_res}')
+            # if ws_res == 9:
+            #     ws.pong()
+            # elif not ws_res.opcode == 10:
+            #     ws.connect('ws://127.0.0.1:8002/livedata')
+            #有消息处理
+            if recv_data:
                 res = [int(i) for i in recv_data]
                 res = [str(i) for i in res]
                 res = ','.join(res)
@@ -81,9 +80,9 @@ def dispose_client_request(tcp_client, client_address):
                 # if run_time.minute-start_time.minute==1:
                 #     start_time = run_time
                 #     save_oxygen_data(oxygen, temperature)
-            except Exception as error:
-                logger.error(str(error))
-                ws.connect('ws://127.0.0.1:8002/livedata') #重连
+        except Exception as error:
+            logger.error(str(error))
+            ws.connect('ws://127.0.0.1:8002/livedata') #重连
         
         #发送后台命令
         if msg_dequeue:
