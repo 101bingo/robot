@@ -92,6 +92,16 @@ async def websocket_send(websocket: WebSocket):
     except Exception as e:
         await websocket.close()
 
+@app.websocket("/livedata")
+async def websocket_send(websocket: WebSocket):
+    try:
+        await websocket.accept()
+        while True:
+            data = await websocket.receive_text()
+            if data:
+                live_data_deque.append(data)
+    except Exception as e:
+        await websocket.close()
 
 if __name__ == "__main__":
     HOST = '0.0.0.0'
