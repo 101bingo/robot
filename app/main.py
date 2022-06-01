@@ -67,7 +67,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 'temperature':temperature
             }
             logger.info(str(data_dict))
-            await manager.broadcast(data_dict)
+            if manager.active_connections:
+                await manager.broadcast(data_dict)
             if live_data_deque:
                 print(11111111111111)
                 msg = live_data_deque.popleft()
