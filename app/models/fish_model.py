@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from logging import exception
 from sqlalchemy import Column,Integer,String,Float
 # import sys
@@ -33,5 +34,17 @@ def add_oxygen_data_per_minute(oxygen_info):
         session.rollback()
     session.refresh(format_data)
     return True
+
+def get_oxygen_data_onehour():
+    """ 获取一小时内数据 """
+    time_now = datetime.now()
+    onehourData = session.query(FishData).filter(FishData.date_info <=time_now-timedelta(hours=1)).all()
+    try:
+        session.commit()
+    except Exception as e:
+        logging.warning(str(e))
+        session.rollback()
+    # session.refresh(format_data)
+    return onehourData
 
 # Base.metadata.create_all(engine)

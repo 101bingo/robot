@@ -31,7 +31,7 @@ def save_oxygen_data(oxygen, temperature):
         'oxygen':oxygen,
         'temperature':temperature
     }
-    res = requests.post(url='http://localhost:8082/api/fish/addData',headers={'accept': 'application/json'},\
+    res = requests.post(url='http://localhost:8002/api/fish/addData',headers={'accept': 'application/json'},\
                         data=json.dumps(body))
     print('res:', res)
 
@@ -41,7 +41,7 @@ def send_live_data_to_background(oxygen, temperature):
         'oxygen':oxygen,
         'temperature':temperature
     }
-    res = requests.post(url='http://localhost:8082/api/fish/sendOxygen',headers={'accept': 'application/json'},\
+    res = requests.post(url='http://localhost:8002/api/fish/sendOxygen',headers={'accept': 'application/json'},\
                         data=json.dumps(body))
     print('res:', res)
 

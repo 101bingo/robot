@@ -4,8 +4,9 @@ from pydantic import BaseModel
 import random
 from collections import deque
 from datetime import datetime
+from loguru import logger
 
-from models.fish_model import add_oxygen_data_per_minute
+from models.fish_model import add_oxygen_data_per_minute,get_oxygen_data_onehour
 
 # 实际的子路由
 router = APIRouter()
@@ -53,6 +54,12 @@ async def add_data(item: OxygenItem):
     print("oxygen_info:", oxygen_info)
     # add_oxygen_data_per_minute(oxygen_info)
     return {'code':0, 'msg':TEST_DATA}
+
+# @router.get('/getOxygenOneHour')
+# async def getOxygenOneHour(item: OxygenItem):
+#     data_temp = get_oxygen_data_onehour()
+#     logger.debug(str(data_temp))
+#     return {'code':0, 'msg':'success'}
 
 @router.get('/addData2')
 async def add_data2():
