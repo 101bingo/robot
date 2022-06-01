@@ -103,8 +103,8 @@ async def websocket_send(websocket: WebSocket):
         while True:
             data = await websocket.receive_text()
             if data:
-                # final_data = data.split(',')
-                final_data = [int(dn) for dn in data]
+                final_data = data.split(',')
+                final_data = [int(dn) for dn in final_data]
                 logger.info(f'data:{final_data}\n{type(final_data)}')
                 live_data_deque.append(final_data)
     except Exception as e:
