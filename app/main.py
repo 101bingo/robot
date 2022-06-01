@@ -99,6 +99,7 @@ async def websocket_send(websocket: WebSocket):
         while True:
             data = await websocket.receive_text()
             if data:
+                logger.info(f'data:{data}\n{type(data)}')
                 live_data_deque.append(data)
     except Exception as e:
         await websocket.close()
