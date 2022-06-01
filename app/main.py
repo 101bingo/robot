@@ -59,7 +59,7 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         while True:
             time.sleep(1)
-            data = await websocket.receive_text()
+            # data = await websocket.receive_text()
             oxygen = round(random.uniform(3.0,20.0),1)
             temperature = round(random.uniform(20.0,30.0),1)
             data_dict = {
@@ -68,6 +68,13 @@ async def websocket_endpoint(websocket: WebSocket):
             }
             logger.info(str(data_dict))
             await manager.broadcast(data_dict)
+            if live_data_deque:
+                print(11111111111111)
+                msg = live_data_deque.popleft()
+                print('msg:', msg)
+                await websocket.send_json(data_dict)
+            else:
+                await asyncio.sleep(0.01)
     except WebSocketDisconnect:
         manager.disconnect(websocket)
 
