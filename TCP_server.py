@@ -47,7 +47,8 @@ def send_live_data_to_background(oxygen, temperature):
 
 def dispose_client_request(tcp_client, client_address):
     start_time = datetime.now()
-    ws = websocket.WebSocket().connect('ws://127.0.0.1:8002/livedata')
+    ws = websocket.WebSocket()
+    ws.connect('ws://127.0.0.1:8002/livedata')
     #循环接受或发送数据
     while True:
         run_time = datetime.now()
