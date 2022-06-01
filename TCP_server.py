@@ -3,27 +3,27 @@ from collections import deque
 from datetime import datetime
 import threading
 import asyncio
-import websockets
+import websocket
 import requests
 import json
 
 msg_dequeue = deque()
 live_data = deque()
 
-async def recv_cmd_ws(websocket):
-    while True:
-        recv_text = await websocket.recv()
-        if recv_text:
-            print('recv_text:', recv_text)
-            msg_dequeue.append(recv_text)
+# async def recv_cmd_ws(websocket):
+#     while True:
+#         recv_text = await websocket.recv()
+#         if recv_text:
+#             print('recv_text:', recv_text)
+#             msg_dequeue.append(recv_text)
 
-async def ws_connected():
-    async with websockets.connect('ws://127.0.0.1:8082/sendcmd') as ws:
-        await recv_cmd_ws(ws)
+# async def ws_connected():
+#     async with websockets.connect('ws://127.0.0.1:8082/sendcmd') as ws:
+#         await recv_cmd_ws(ws)
 
-async def ws_live_data(msg):
-    async with websockets.connect('ws://127.0.0.1:8002/livedata') as ws:
-        await ws.send(msg)
+# async def ws_live_data(msg):
+#     async with websockets.connect('ws://127.0.0.1:8002/livedata') as ws:
+#         await ws.send(msg)
 
 def save_oxygen_data(oxygen, temperature):
     """ 保存溶氧数据到数据库，请求后端 """
@@ -47,7 +47,7 @@ def send_live_data_to_background(oxygen, temperature):
 
 def dispose_client_request(tcp_client, client_address):
     start_time = datetime.now()
-    ws = websockets.connect('ws://127.0.0.1:8082/livedata')
+    ws = websocket.WebSocket().connect('ws://127.0.0.1:8082/livedata')
     #循环接受或发送数据
     while True:
         run_time = datetime.now()
