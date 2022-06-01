@@ -30,5 +30,6 @@ class ConnectionManager:
             except Exception as e:
                 logger.error(str(e))
                 self.active_connections.remove(connection)
+                connection.close()
 
 manager = ConnectionManager()
