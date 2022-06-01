@@ -67,11 +67,12 @@ def dispose_client_request(tcp_client, client_address):
         if recv_data:
             try:
                 res = [int(i) for i in recv_data]
+                
                 res = ','.join(res)
                 print('receve_data:', res)
                 logger.debug(f'recv_o:{recv_data}')
                 logger.debug(f'recv_type:{type(recv_data)}')
-                ws.send(str(res))
+                ws.send(str(recv_data))
                 # ws.send(recv_data)
                 print('websocket send success!')
                 # oxygen = float(res[0])
