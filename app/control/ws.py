@@ -23,7 +23,7 @@ class ConnectionManager:
             # await connection.send_text(message)
             try:
                 logger.info(f'connect:{connection}')
-                logger.warning(f'app_status:{connection.application_state()}')
+                logger.warning(f'app_status:{connection.application_state}')
                 logger.debug(str(message))
                 await connection.send_json(message)
             except Exception as e:

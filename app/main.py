@@ -4,6 +4,7 @@ from fastapi import FastAPI,WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
 import random
+from loguru import logger
 import uvicorn
 import asyncio
 import time
@@ -65,6 +66,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 'oxygen':oxygen,
                 'temperature':temperature
             }
+            logger.info(str(data_dict))
             await manager.broadcast(data_dict)
     except WebSocketDisconnect:
         manager.disconnect(websocket)
