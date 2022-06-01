@@ -58,7 +58,9 @@ def dispose_client_request(tcp_client, client_address):
         ws.ping()
         ws_res = ws.recv_frame()
         logger.debug(f'recv_fram:{ws_res}')
-        if not ws_res.opcode == 10:
+        if ws_res.opcode == 9:
+            ws.pong()
+        elif not ws_res.opcode == 10:
             ws.connect('ws://127.0.0.1:8002/livedata')
         #有消息处理
         if recv_data:
