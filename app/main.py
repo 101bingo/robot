@@ -49,6 +49,10 @@ async def websocket_endpoint(websocket: WebSocket):
             print(11111111111111)
             msg = live_data_deque.popleft()
             print('msg:', msg)
+            data_dict = {
+                'oxygen':msg[0]/10.0,
+                'temperature':msg[1]/10.0
+            }
             await websocket.send_json(data_dict)
         else:
             await asyncio.sleep(0.01)
@@ -99,8 +103,10 @@ async def websocket_send(websocket: WebSocket):
         while True:
             data = await websocket.receive_text()
             if data:
-                logger.info(f'data:{data}\n{type(data)}')
-                live_data_deque.append(data)
+                final_data = data.split(',')
+                final_data = [int(dn) for dn in final_data]
+                logger.info(f'data:{final_data}\n{type(final_data)}')
+                live_data_deque.append(final_data)
     except Exception as e:
         await websocket.close()
 
