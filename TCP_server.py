@@ -65,16 +65,20 @@ def dispose_client_request(tcp_client, client_address):
         #     ws.connect('ws://127.0.0.1:8002/livedata')
         #有消息处理
         if recv_data:
-            res = [int(i) for i in recv_data]
-            print('receve_data:', res)
-            ws.send(str(res))
-            print('websocket send success!')
-            # oxygen = float(res[0])
-            # temperature = float(res[1])
-            # send_live_data_to_background(oxygen, temperature)
-            # if run_time.minute-start_time.minute==1:
-            #     start_time = run_time
-            #     save_oxygen_data(oxygen, temperature)
+            try:
+                res = [int(i) for i in recv_data]
+                print('receve_data:', res)
+                ws.send(str(res))
+                print('websocket send success!')
+                # oxygen = float(res[0])
+                # temperature = float(res[1])
+                # send_live_data_to_background(oxygen, temperature)
+                # if run_time.minute-start_time.minute==1:
+                #     start_time = run_time
+                #     save_oxygen_data(oxygen, temperature)
+            except Exception as error:
+                logger.error(str(error))
+                ws.connect('ws://127.0.0.1:8002/livedata') #重连
         
         #发送后台命令
         if msg_dequeue:
