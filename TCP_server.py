@@ -68,7 +68,6 @@ def dispose_client_request(tcp_client, client_address):
             try:
                 res = [int(i) for i in recv_data]
                 
-                res = ','.join(res)
                 print('receve_data:', res)
                 logger.debug(f'recv_o:{recv_data}')
                 logger.debug(f'recv_type:{type(recv_data)}')
