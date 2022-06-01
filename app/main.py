@@ -59,7 +59,7 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         while True:
             time.sleep(1)
-            # await websocket.receive_text()
+            data = await websocket.receive_text()
             oxygen = round(random.uniform(3.0,20.0),1)
             temperature = round(random.uniform(20.0,30.0),1)
             data_dict = {
