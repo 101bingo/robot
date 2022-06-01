@@ -56,12 +56,12 @@ def dispose_client_request(tcp_client, client_address):
         if recv_data:
             res = [int(i) for i in recv_data]
             print('receve_data:', res)
-            oxygen = float(res[0])
-            temperature = float(res[1])
-            send_live_data_to_background(oxygen, temperature)
-            if run_time.minute-start_time.minute==1:
-                start_time = run_time
-                save_oxygen_data(oxygen, temperature)
+            # oxygen = float(res[0])
+            # temperature = float(res[1])
+            # send_live_data_to_background(oxygen, temperature)
+            # if run_time.minute-start_time.minute==1:
+            #     start_time = run_time
+            #     save_oxygen_data(oxygen, temperature)
         
         #发送后台命令
         if msg_dequeue:
