@@ -3,6 +3,7 @@ from collections import deque
 from datetime import datetime
 import threading
 import asyncio
+from loguru import logger
 import websocket
 import requests
 import json
@@ -54,6 +55,11 @@ def dispose_client_request(tcp_client, client_address):
         run_time = datetime.now()
         recv_data = tcp_client.recv(256)
 
+        ws.ping()
+        ws_res = ws.recv_frame()
+        logger.debug(f'recv_fram:{ws_res}')
+        if not ws_res.opcode == 10:
+            ws.connect('ws://127.0.0.1:8002/livedata')
         #有消息处理
         if recv_data:
             res = [int(i) for i in recv_data]
