@@ -108,6 +108,8 @@ async def websocket_send(websocket: WebSocket):
                 logger.info(f'data:{final_data}\n{type(final_data)}')
                 if len(final_data) ==2:
                     live_data_deque.append(final_data)
+                    if len(live_data_deque)>10:
+                        live_data_deque.popleft()
     except Exception as e:
         await websocket.close()
 
