@@ -47,4 +47,4 @@ def get_oxygen_data_onehour():
     # session.refresh(format_data)
     return onehourData
 
-# Base.metadata.create_all(engine)
+Base.metadata.create_all(engine)
