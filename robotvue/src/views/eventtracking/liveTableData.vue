@@ -5,9 +5,10 @@
       <template slot-scope="props">
         <el-form>
           <el-form-item
-          v-for="(kwd, index) in props.row.address"
-          :key="index"
-          inline>
+            v-for="(kwd, index) in props.row.address"
+            :key="index"
+            inline
+          >
             <el-button type="primary">{{ index }}</el-button>
             <el-button>{{ kwd }}</el-button>
             <!-- <span> {{ kwd }}</span> -->
@@ -15,10 +16,32 @@
         </el-form>
       </template>
     </el-table-column>
-    <el-table-column prop="date" label="时间" width="180" header-align="center"></el-table-column>
-    <el-table-column prop="id" label="事件ID" width="180" header-align="center" align="center"></el-table-column>
-    <el-table-column prop="name" label="事件名称" width="180" header-align="center" align="center"></el-table-column>
-    <el-table-column prop="expendWords" label="扩展字段" header-align="center" align="center"></el-table-column>
+    <el-table-column
+      prop="date"
+      label="时间"
+      width="180"
+      header-align="center"
+    ></el-table-column>
+    <el-table-column
+      prop="id"
+      label="事件ID"
+      width="180"
+      header-align="center"
+      align="center"
+    ></el-table-column>
+    <el-table-column
+      prop="name"
+      label="事件名称"
+      width="180"
+      header-align="center"
+      align="center"
+    ></el-table-column>
+    <el-table-column
+      prop="expendWords"
+      label="扩展字段"
+      header-align="center"
+      align="center"
+    ></el-table-column>
   </el-table>
 </template>
 
@@ -29,18 +52,7 @@ export default {
   name: "LiveTableDataa",
   data() {
     return {
-      tableData: [
-        {
-          id: "P1026012",
-          desc: "我的页面",
-          address: {
-            pageId: 12345,
-            sessionId: "heisidfhiezoqb584671235",
-            souceId:9527
-          },
-          expendWords:"pageId: 12345,sessionId: heisidfhiezoqb584671235,souceId:9527"
-        },
-      ],
+      tableData: [],
       eventDict: [
         {
           id: "P1026012",
@@ -48,9 +60,10 @@ export default {
           address: {
             pageId: 12345,
             sessionId: "heisidfhiezoqb584671235",
-            souceId:9527
+            souceId: 9527,
           },
-          expendWords:"pageId: 12345,sessionId: heisidfhiezoqb584671235,souceId:9527"
+          expendWords:
+            "pageId: 12345,sessionId: heisidfhiezoqb584671235,souceId:9527",
         },
         {
           id: "C102601",
@@ -58,9 +71,10 @@ export default {
           address: {
             pageId: 676436,
             sessionId: "jueqidkeiadsdf584671235",
-            souceId:9528
+            souceId: 9528,
           },
-          expendWords:"pageId: 676436,sessionId: jueqidkeiadsdf584671235,souceId:9528"
+          expendWords:
+            "pageId: 676436,sessionId: jueqidkeiadsdf584671235,souceId:9528",
         },
         {
           id: "CE1026012",
@@ -68,11 +82,12 @@ export default {
           address: {
             pageId: 12345,
             sessionId: "heisidfhiezoqb584671235",
-            souceId:9527,
-            position:1,
-            type:"page01"
+            souceId: 9527,
+            position: 1,
+            type: "page01",
           },
-          expendWords:"pageId: 12345,sessionId: 87912,souceId:9527,position:1,type:page01"
+          expendWords:
+            "pageId: 12345,sessionId: 87912,souceId:9527,position:1,type:page01",
         },
         {
           id: "C102603",
@@ -80,11 +95,12 @@ export default {
           address: {
             pageId: 58458,
             sessionId: "sdjfwoejfoasdsdf584671235",
-            souceId:8527,
-            position:9,
-            type:"video"
+            souceId: 8527,
+            position: 9,
+            type: "video",
           },
-          expendWords:"pageId: 58458,sessionId: sdjfwoejfoasdsdf584671235,souceId:8527,position:9,type:video"
+          expendWords:
+            "pageId: 58458,sessionId: sdjfwoejfoasdsdf584671235,souceId:8527,position:9,type:video",
         },
         {
           id: "P102603",
@@ -92,11 +108,12 @@ export default {
           address: {
             pageId: 38465,
             sessionId: "weasdfwjijiowe584671235",
-            souceId:7527,
-            position:5,
-            type:"video"
+            souceId: 7527,
+            position: 5,
+            type: "video",
           },
-          expendWords:"pageId: 38465,sessionId: weasdfwjijiowe584671235,souceId:7527,position:5,type:video"
+          expendWords:
+            "pageId: 38465,sessionId: weasdfwjijiowe584671235,souceId:7527,position:5,type:video",
         },
         {
           id: "CE102604",
@@ -104,11 +121,12 @@ export default {
           address: {
             pageId: 58465,
             sessionId: "weasdfwjijiowe584671235",
-            souceId:9527,
-            position:5,
-            type:"video"
+            souceId: 9527,
+            position: 5,
+            type: "video",
           },
-          expendWords:"pageId: 58465,sessionId: weasdfwjijiowe584671235,souceId:9522,position:5,type:video"
+          expendWords:
+            "pageId: 58465,sessionId: weasdfwjijiowe584671235,souceId:9522,position:5,type:video",
         },
         {
           id: "C201201",
@@ -116,10 +134,11 @@ export default {
           address: {
             pageId: 827382,
             sessionId: "dfasewefasdiijiw584671235",
-            souceId:5846,
-            type:"btn"
+            souceId: 5846,
+            type: "btn",
           },
-          expendWords:"pageId: 827382,sessionId: dfasewefasdiijiw584671235,souceId:5846,type:btn"
+          expendWords:
+            "pageId: 827382,sessionId: dfasewefasdiijiw584671235,souceId:5846,type:btn",
         },
       ],
     };
@@ -175,8 +194,8 @@ export default {
         id: evnetId.id,
         date: nowTime,
         name: evnetId.desc,
-        address:evnetId.address,
-        expendWords:evnetId.expendWords
+        address: evnetId.address,
+        expendWords: evnetId.expendWords,
       };
       this.tableData.push(temp);
     },
