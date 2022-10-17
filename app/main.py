@@ -21,7 +21,8 @@ app.include_router(api_router, prefix="/api")
 
 
 origins = [
-    'http://localhost:9528',
+    # 'http://localhost:9528',
+    'http://localhost',
     '*'
 ]
 
