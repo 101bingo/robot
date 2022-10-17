@@ -12,8 +12,6 @@
 
 
 <script>
-// import { validUsername } from "@/utils/validate";
-import { LiveTableDataa } from "@/views/eventtracking/liveTableData"
 export default {
   name: "Eventtracking",
   components:{

@@ -55,27 +55,6 @@ export const constantRoutes = [
     }]
   },
 
-  // {
-  //   path: '/example',
-  //   component: Layout,
-  //   redirect: '/example/table',
-  //   name: 'Example',
-  //   meta: { title: '埋点平台', icon: 'el-icon-s-help' },
-  //   children: [
-  //     {
-  //       path: 'table',
-  //       name: 'Table',
-  //       component: () => import('@/views/table/index'),
-  //       meta: { title: 'Table', icon: 'table' }
-  //     },
-  //     {
-  //       path: 'tree',
-  //       name: 'Tree',
-  //       component: () => import('@/views/tree/index'),
-  //       meta: { title: 'Tree', icon: 'tree' }
-  //     }
-  //   ]
-  // },
   {
     path: '/eventtrack',
     component: Layout,
@@ -97,27 +76,6 @@ export const constantRoutes = [
       }
     ]
   },
-  // {
-  //   path: '/index',
-  //   component: Layout,
-  //   redirect: '/eventtracking',
-  //   name: 'Eventtracking',
-  //   meta: { title: '埋点平台', icon: 'el-icon-s-help' },
-  //   children: [
-  //     {
-  //       path: 'index',
-  //       name: 'Eventtracking',
-  //       component: () => import('@/views/eventtracking/index'),
-  //       meta: { title: '神策', icon: 'table' }
-  //     }
-  //   ]
-  // },
-  // {
-  //   path: 'eventtracking',
-  //   name: 'Eventtracking',
-  //   component: () => import('@/views/eventtracking/index'),
-  //   meta: { title: '神策', icon: 'table' }
-  // },
 
   {
     path: '/form',
@@ -219,5 +177,22 @@ export function resetRouter() {
   const newRouter = createRouter()
   router.matcher = newRouter.matcher // reset router
 }
+
+// 导航守卫
+// 使用 router.beforeEach 注册一个全局前置守卫，判断用户是否登陆
+// router.beforeEach((to, from, next) => {
+//   if (to.path === '/login') {
+//     next();
+//   } else {
+//     let token = localStorage.getItem('Authorization');
+ 
+//     if (token === null || token === '') {
+//       next('/login');
+//     } else {
+//       next();
+//     }
+//   }
+// });
+
 
 export default router
