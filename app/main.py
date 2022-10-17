@@ -11,6 +11,7 @@ import time
 
 from router.api import api_router
 from control.fish_run import cmd_deque,live_data_deque
+from control.login import *
 from control.ws import manager
 
 
@@ -20,7 +21,8 @@ app.include_router(api_router, prefix="/api")
 
 
 origins = [
-    'http://localhost'
+    'http://localhost:9528',
+    '*'
 ]
 
 app.add_middleware(
