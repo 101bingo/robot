@@ -24,6 +24,7 @@ origins = [
     # 'http://localhost:9528',
     'http://localhost',
     'http://localhost:8080',
+    'http://42.193.138.254'
     '*'
 ]
 
