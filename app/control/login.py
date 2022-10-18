@@ -224,7 +224,7 @@ async def user_login(userinfo: UserLogin):
     )
     return {'code':20000,'access_token':access_token, 'token_type':'Bearer'}
 
-@router.post('/create/user', response_model=BaseUser)
+@router.post('/create/user', response_model=BaseUser, dependencies=[Depends(get_root_user)])
 async def create_users(user: CreateUser):
     password = user.password
     hashed_password = pwd_context.hash(password)
