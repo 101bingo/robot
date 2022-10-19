@@ -3,10 +3,10 @@ from logging import exception
 from sqlalchemy import Column,Integer,String,Float
 # import sys
 # print(sys.path)
-from db.database import Base,engine,SessionLocal
+from db.database import Base,engine,async_SessionLocal
 
 import logging
-session = SessionLocal()
+session = async_SessionLocal()
 
 #创建数据模型
 
@@ -47,4 +47,4 @@ def get_oxygen_data_onehour():
     # session.refresh(format_data)
     return onehourData
 
-Base.metadata.create_all(engine)
+# Base.metadata.create_all(engine)

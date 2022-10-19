@@ -66,8 +66,9 @@ def get_password_hashed(password):
     return pwd_context.hash(password)
 
 """ sql中获取user信息 """
-def get_user(username: str):
-    user = get_user_info(username)
+async def get_user(username: str):
+    user = await get_user_info(username)
+    logger.debug(f'user:{user}')
     if user:
         user_dict = {
             "username": user.username,
@@ -78,8 +79,8 @@ def get_user(username: str):
         return UserInDb(**user_dict)
 
 """ 验证用户合法性 """
-def authenticate_user(username:str,password: str):
-    user = get_user(username)
+async def authenticate_user(username:str,password: str):
+    user = await get_user(username)
     if not user:
         return False
     if not verify_password(password, user.hashed_password):
@@ -113,13 +114,13 @@ def verify_token(token: str):
 
 @router.post('/token', response_model=Token)
 async def login_for_access_token(form_data:OAuth2PasswordRequestForm=Depends()):
-    users_db = get_user(form_data.username)
+    users_db = await get_user(form_data.username)
     if users_db is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail='username is not exist'
         )
-    user = authenticate_user(form_data.username, form_data.password)
+    user = await authenticate_user(form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -147,7 +148,7 @@ async def get_root_user(token: str=Depends(oauth2_scheme)):
         token_data = TokenData(username=username)
     except JWTError:
         raise credentials_exception
-    user = get_user(username=token_data.username)
+    user = await get_user(username=token_data.username)
     if not user.username=='bingo':
         raise credentials_exception
     return user
@@ -169,7 +170,7 @@ async def get_current_user(token: str=Depends(oauth2_scheme)):
     except JWTError:
         logger.debug(222222222)
         raise credentials_exception
-    user = get_user(username=token_data.username)
+    user = await get_user(username=token_data.username)
     if user is None:
         logger.debug(333333333)
         raise credentials_exception
@@ -205,13 +206,13 @@ async def test_api():
 
 @router.post('/users/login')
 async def user_login(userinfo: UserLogin):
-    users_db = get_user(userinfo.username)
+    users_db = await get_user(userinfo.username)
     if users_db is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail='username is not exist'
         )
-    user = authenticate_user(userinfo.username, userinfo.password)
+    user = await authenticate_user(userinfo.username, userinfo.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -230,7 +231,7 @@ async def create_users(user: CreateUser):
     hashed_password = pwd_context.hash(password)
     logger.debug(hashed_password)
     user.password = hashed_password
-    new_user = add_login_user(user)
+    new_user = await add_login_user(user)
     if not new_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
