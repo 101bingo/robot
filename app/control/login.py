@@ -191,7 +191,8 @@ async def read_user_me(current_user: BaseUser=Depends(get_current_active_user)):
 @router.get('/users/info', dependencies=[Depends(verify_token)])
 async def read_user_me():
     data = {
-        'avatar':'https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif',
+        # 'avatar':'https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif',
+        'avatar':'https://ts1.cn.mm.bing.net/th/id/R-C.a28cf610c2e9ab0933746fc1e05fd0bf?rik=cog%2fbctyyiUbvg&riu=http%3a%2f%2f5b0988e595225.cdn.sohucs.com%2fimages%2f20190531%2f29f159830727425db827cdd55e1e276a.gif&ehk=qkPTGbcBmPN7%2bpFP5zz2fYMF%2fKlEx4Sqh7kk6%2bPyK2c%3d&risl=&pid=ImgRaw&r=0',
         'userType':'Supper admin'
         }
     return {'code':20000,'data':data}

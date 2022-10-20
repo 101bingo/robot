@@ -69,11 +69,58 @@ export const constantRoutes = [
         meta: { title: '神策', icon: 'table' }
       },
       {
-        path: 'tree',
+        path: 'ymevent',
         name: 'Tree',
-        component: () => import('@/views/tree/index'),
+        component: () => import('@/views/ymevent/index'),
         meta: { title: '友盟', icon: 'tree' }
       }
+    ]
+  },
+  {
+    path: '/sft',
+    component: Layout,
+    meta: { title: '云测平台', icon: 'el-icon-s-help' },
+    children: [
+      {
+        path: 'ios',
+        name: 'iOS',
+        component: () => import('@/views/form/index'),
+        meta: { title: 'iOS', icon: 'form' }
+      },
+      {
+        path: 'android',
+        name: 'Android',
+        component: () => import('@/views/form/index'),
+        meta: { title: 'Android', icon: 'form' }
+      }
+    ]
+  },
+  {
+    path: '/testcase',
+    component: Layout,
+    // redirect: '/testcase',
+    name: 'testcase',
+    meta: { title: '用例管理', icon: 'nested' },
+    children: [
+      {
+        path: 'uitestcase',
+        name: 'UItestcase',
+        component: () => import('@/views/eventtracking/index'),
+        meta: { title: 'UI自动化用例', icon: 'tree' }
+      },
+      {
+        path: 'interfacecase',
+        name: 'Interfacecase',
+        component: () => import('@/views/tree/index'),
+        meta: { title: '接口用例', icon: 'tree' }
+      },
+      {
+        path: 'webcase',
+        name: 'Webcase',
+        component: () => import('@/views/tree/index'),
+        meta: { title: 'web用例', icon: 'tree' }
+      }
+
     ]
   },
 
@@ -89,65 +136,66 @@ export const constantRoutes = [
       }
     ]
   },
+  
 
-  {
-    path: '/nested',
-    component: Layout,
-    redirect: '/nested/menu1',
-    name: 'Nested',
-    meta: {
-      title: 'Nested',
-      icon: 'nested'
-    },
-    children: [
-      {
-        path: 'menu1',
-        component: () => import('@/views/nested/menu1/index'), // Parent router-view
-        name: 'Menu1',
-        meta: { title: 'Menu1' },
-        children: [
-          {
-            path: 'menu1-1',
-            component: () => import('@/views/nested/menu1/menu1-1'),
-            name: 'Menu1-1',
-            meta: { title: 'Menu1-1' }
-          },
-          {
-            path: 'menu1-2',
-            component: () => import('@/views/nested/menu1/menu1-2'),
-            name: 'Menu1-2',
-            meta: { title: 'Menu1-2' },
-            children: [
-              {
-                path: 'menu1-2-1',
-                component: () => import('@/views/nested/menu1/menu1-2/menu1-2-1'),
-                name: 'Menu1-2-1',
-                meta: { title: 'Menu1-2-1' }
-              },
-              {
-                path: 'menu1-2-2',
-                component: () => import('@/views/nested/menu1/menu1-2/menu1-2-2'),
-                name: 'Menu1-2-2',
-                meta: { title: 'Menu1-2-2' }
-              }
-            ]
-          },
-          {
-            path: 'menu1-3',
-            component: () => import('@/views/nested/menu1/menu1-3'),
-            name: 'Menu1-3',
-            meta: { title: 'Menu1-3' }
-          }
-        ]
-      },
-      {
-        path: 'menu2',
-        component: () => import('@/views/nested/menu2/index'),
-        name: 'Menu2',
-        meta: { title: 'menu2' }
-      }
-    ]
-  },
+  // {
+  //   path: '/nested',
+  //   component: Layout,
+  //   redirect: '/nested/menu1',
+  //   name: 'Nested',
+  //   meta: {
+  //     title: 'Nested',
+  //     icon: 'nested'
+  //   },
+  //   children: [
+  //     {
+  //       path: 'menu1',
+  //       component: () => import('@/views/nested/menu1/index'), // Parent router-view
+  //       name: 'Menu1',
+  //       meta: { title: 'Menu1' },
+  //       children: [
+  //         {
+  //           path: 'menu1-1',
+  //           component: () => import('@/views/nested/menu1/menu1-1'),
+  //           name: 'Menu1-1',
+  //           meta: { title: 'Menu1-1' }
+  //         },
+  //         {
+  //           path: 'menu1-2',
+  //           component: () => import('@/views/nested/menu1/menu1-2'),
+  //           name: 'Menu1-2',
+  //           meta: { title: 'Menu1-2' },
+  //           children: [
+  //             {
+  //               path: 'menu1-2-1',
+  //               component: () => import('@/views/nested/menu1/menu1-2/menu1-2-1'),
+  //               name: 'Menu1-2-1',
+  //               meta: { title: 'Menu1-2-1' }
+  //             },
+  //             {
+  //               path: 'menu1-2-2',
+  //               component: () => import('@/views/nested/menu1/menu1-2/menu1-2-2'),
+  //               name: 'Menu1-2-2',
+  //               meta: { title: 'Menu1-2-2' }
+  //             }
+  //           ]
+  //         },
+  //         {
+  //           path: 'menu1-3',
+  //           component: () => import('@/views/nested/menu1/menu1-3'),
+  //           name: 'Menu1-3',
+  //           meta: { title: 'Menu1-3' }
+  //         }
+  //       ]
+  //     },
+  //     {
+  //       path: 'menu2',
+  //       component: () => import('@/views/nested/menu2/index'),
+  //       name: 'Menu2',
+  //       meta: { title: 'menu2' }
+  //     }
+  //   ]
+  // },
 
   {
     path: 'external-link',
