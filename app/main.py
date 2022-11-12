@@ -176,12 +176,12 @@ def tcpworker(tcp_deque: deque):
 if __name__ == "__main__":
     HOST = '0.0.0.0'
     PORT = 8002
-    uvicorn.run(app='main:app', host=HOST, port=PORT, reload=True, debug=True, workers=1)
-    # thd_server = multiprocessing.Process(target=server)
-    # thd_tcp = multiprocessing.Process(target=tcpworker, args=(tcp_deque,))
-    # thd_server.start()
-    # thd_tcp.start()
+    # uvicorn.run(app='main:app', host=HOST, port=PORT, reload=True, debug=True, workers=1)
+    thd_server = multiprocessing.Process(target=server)
+    thd_tcp = multiprocessing.Process(target=tcpworker, args=(tcp_deque,))
+    thd_server.start()
+    thd_tcp.start()
 
-    # thd_server.join()
-    # thd_tcp.join()
+    thd_server.join()
+    thd_tcp.join()
 
