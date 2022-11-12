@@ -1,5 +1,5 @@
 from datetime import datetime
-from logging import exception
+from socket import AF_INET, SO_REUSEADDR, SOCK_STREAM, SOL_SOCKET,socket
 from fastapi import FastAPI,WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -8,11 +8,18 @@ from loguru import logger
 import uvicorn
 import asyncio
 import time
+import threading
+import multiprocessing
+from collections import deque
 
 from router.api import api_router
 from control.fish_run import cmd_deque,live_data_deque
 from control.login import *
 from control.ws import manager
+
+tcp_deque = deque()       # tcp消息队列
+# tcp_deque = multiprocessing.Queue()       # tcp消息队列
+IS_TCP_START = 0
 
 
 app = FastAPI()
@@ -21,7 +28,7 @@ app.include_router(api_router, prefix="/api")
 
 
 origins = [
-    # 'http://localhost:9528',
+    'http://localhost:9528',
     'http://localhost',
     'http://localhost:8080',
     'http://42.193.138.254'
@@ -118,7 +125,63 @@ async def websocket_send(websocket: WebSocket):
     except Exception as e:
         await websocket.close()
 
+@app.get('/testtcp')
+def testtcprecv():
+    if tcp_deque:
+        logger.debug(f'tcp_deque:{tcp_deque}')
+    else:
+        logger.debug('tcp deque is empty')
+
+@app.get('/startTcp')
+def start_tcp_server():
+    global IS_TCP_START,tcp_deque
+    if IS_TCP_START:
+        return {'res':0, 'msg':'tcp server is already started'}
+    else:
+        IS_TCP_START = 1
+        thd_tcp = threading.Thread(target=tcpworker, args=(tcp_deque,))
+        thd_tcp.setDaemon(True) #设置守护线程(主线程关闭后，子线程自动销毁)
+        thd_tcp.start()
+
+@app.get('/stopTcp')
+def stop_tcp_server():
+    global IS_TCP_START,thd_tcp
+    if IS_TCP_START:
+        return {'res':0, 'msg':'tcp server is already closed'}
+
+def server():
+    HOST = '0.0.0.0'
+    PORT = 8002
+    uvicorn.run(app='main:app', host=HOST, port=PORT, reload=True, debug=True, workers=1)
+
+def tcpworker(tcp_deque: deque):
+    IP_ADDRESS = '42.193.138.254'
+    SERVER_PORT = 6222
+    tcp_server = socket(AF_INET, SOCK_STREAM)
+    #设置端口复用，使程序退出后端口马上释放
+    tcp_server.setsockopt(SOL_SOCKET, SO_REUSEADDR, True)
+
+    #绑定端口
+    tcp_server.bind(('', SERVER_PORT))
+    tcp_server.listen(4)
+    logger.debug(f'start tcp server success! Listen port:{SERVER_PORT}')
+    while True:
+        tcp_client, client_address = tcp_server.accept()
+        recv = tcp_client.recv(64)
+        logger.debug(f'[{client_address}]->recv:{recv}')
+        tcp_deque.append(recv)
+        tcp_client.close()
+
+
 if __name__ == "__main__":
     HOST = '0.0.0.0'
     PORT = 8002
     uvicorn.run(app='main:app', host=HOST, port=PORT, reload=True, debug=True, workers=1)
+    # thd_server = multiprocessing.Process(target=server)
+    # thd_tcp = multiprocessing.Process(target=tcpworker, args=(tcp_deque,))
+    # thd_server.start()
+    # thd_tcp.start()
+
+    # thd_server.join()
+    # thd_tcp.join()
+
