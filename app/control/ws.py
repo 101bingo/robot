@@ -20,7 +20,7 @@ class ConnectionManager:
 
     async def broadcast(self, message: dict):
         logger.debug(f'connect_dict:{self.active_connections}')
-        for connection in self.active_connections:
+        for connection in self.active_connections[:]:
             # await connection.send_text(message)
             try:
                 logger.info(f'connect:{connection}')
@@ -30,6 +30,6 @@ class ConnectionManager:
             except Exception as e:
                 logger.error(str(e))
                 self.active_connections.remove(connection)
-                connection.close()
+                # connection.close()
 
 manager = ConnectionManager()

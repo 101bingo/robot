@@ -45,7 +45,9 @@ app.add_middleware(
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
+    # await websocket.accept()
+    await manager.connect(websocket)
+    msg_key = ['date_time', 'temper', 'oxygen_perc', 'oxygen', 'count_time','is_ready_flag']
     while True:
         # data = await websocket.receive_text()
         # await websocket.send_text(f"hello:{data}")
@@ -57,15 +59,27 @@ async def websocket_endpoint(websocket: WebSocket):
         #     'temperature':temperature
         # }
         # await websocket.send_json(data_dict)
-        if live_data_deque:
-            print(11111111111111)
-            msg = live_data_deque.popleft()
-            print('msg:', msg)
-            data_dict = {
-                'oxygen':msg[0]/10.0,
-                'temperature':msg[1]/10.0
-            }
-            await websocket.send_json(data_dict)
+        # if live_data_deque:
+        #     print(11111111111111)
+        #     msg = live_data_deque.popleft()
+        #     print('msg:', msg)
+        #     data_dict = {
+        #         'oxygen':msg[0]/10.0,
+        #         'temperature':msg[1]/10.0
+        #     }
+        #     await websocket.send_json(data_dict)
+
+        # timeNow, temper, oxygen_perc, oxygen, count_time, is_ready_flag
+        # logger.debug('11111111111111')
+        # data = await websocket.receive_text()
+        # logger.debug('22222222222222')
+        # if data=='ping':
+        #     await websocket.send_text('pong')
+        if tcp_deque:
+            msg = tcp_deque.popleft()
+            data_dict = dict(zip(msg_key, msg))
+            # await websocket.send_json(data_dict)
+            await manager.broadcast(data_dict)
         else:
             await asyncio.sleep(0.01)
 
@@ -132,6 +146,18 @@ def testtcprecv():
     else:
         logger.debug('tcp deque is empty')
 
+@app.get('/addtcpdata')
+def add_tcp_data():
+    import random
+    timeNow = datetime.now()
+    timeNow = datetime.strftime(timeNow, '%Y-%m-%d %H:%M:%S')
+    temper = round(random.uniform(20, 30), 2)
+    oxygen_perc = round(random.uniform(98, 120), 2)
+    oxygen = round(random.uniform(7, 10), 2)
+    count_time = random.randint(0,5)
+    is_ready_flag = random.choice([0,1])
+    tcp_deque.append([timeNow, temper, oxygen_perc, oxygen, count_time, is_ready_flag])
+
 @app.get('/startTcp')
 def start_tcp_server():
     global IS_TCP_START,tcp_deque
@@ -154,6 +180,30 @@ def server():
     PORT = 8002
     uvicorn.run(app='main:app', host=HOST, port=PORT, reload=True, debug=True, workers=1)
 
+def recv_msg(tcp_client, client_address):
+    while True:
+        client_text = tcp_client.recv(64)
+        if client_text:
+            logger.debug(f'[{client_address}]->recv:{client_text}')
+            hex_data = client_text.hex()
+            func_key = hex_data[2:4]
+            if func_key in ['83','90']:
+                logger.warning('响应数据异常')
+            else:
+                timeNow = datetime.now().__str__()
+                temper = round(int(hex_data[6:10], 16)/100.0 - 50, 2)          #温度值
+                oxygen_perc = int(hex_data[14:18], 16)/100.0    #溶氧比
+                oxygen = int(hex_data[22:26], 16)/100.0         #溶氧值
+                count_time = int(hex_data[30:34],16)                   #倒计时
+                is_ready_flag = int(hex_data[34:38],16)                #标识位
+                tcp_deque.append([timeNow, temper, oxygen_perc, oxygen, count_time, is_ready_flag])
+                # tcp_deque.append([timeNow,oxygen])
+                # tcp_deque.append(recv)
+        else:
+            logger.debug(f'[{client_address}]->status:已下线')
+            tcp_client.close()
+            break
+
 def tcpworker(tcp_deque: deque):
     IP_ADDRESS = '42.193.138.254'
     SERVER_PORT = 6111
@@ -167,10 +217,31 @@ def tcpworker(tcp_deque: deque):
     logger.debug(f'start tcp server success! Listen port:{SERVER_PORT}')
     while True:
         tcp_client, client_address = tcp_server.accept()
-        recv = tcp_client.recv(64)
-        logger.debug(f'[{client_address}]->recv:{recv}')
-        tcp_deque.append(recv)
-        tcp_client.close()
+        t1 = threading.Thread(target=recv_msg, args=(tcp_client,client_address))
+        # 设置守护线程
+        t1.setDaemon(True)
+        t1.start()
+
+        # if reset:
+        #     tcp_client.send(b'reset')
+        # recv = tcp_client.recv(64)
+        # logger.debug(f'[{client_address}]->recv:{recv}')
+        # if len(recv)>0:
+        #     hex_data = recv.hex()
+        #     func_key = hex_data[2:4]
+        #     if func_key in ['83','90']:
+        #         logger.warning('响应数据异常')
+        #     else:
+        #         timeNow = datetime.now().__str__()
+        #         temper = round(int(hex_data[6:10], 16)/100.0 - 50, 2)          #温度值
+        #         oxygen_perc = int(hex_data[14:18], 16)/100.0    #溶氧比
+        #         oxygen = int(hex_data[22:26], 16)/100.0         #溶氧值
+        #         count_time = int(hex_data[30:34],16)                   #倒计时
+        #         is_ready_flag = int(hex_data[34:38],16)                #标识位
+        #         tcp_deque.append([timeNow, temper, oxygen_perc, oxygen, count_time, is_ready_flag])
+        #         # tcp_deque.append([timeNow,oxygen])
+        #         # tcp_deque.append(recv)
+        # tcp_client.close()
 
 
 if __name__ == "__main__":
