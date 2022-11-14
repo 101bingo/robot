@@ -190,7 +190,8 @@ def recv_msg(tcp_client, client_address):
             if func_key in ['83','90']:
                 logger.warning('响应数据异常')
             else:
-                timeNow = datetime.now().__str__()
+                timeNow = datetime.now()
+                timeNow = datetime.strftime(timeNow, '%Y-%m-%d %H:%M:%S')
                 temper = round(int(hex_data[6:10], 16)/100.0 - 50, 2)          #温度值
                 oxygen_perc = int(hex_data[14:18], 16)/100.0    #溶氧比
                 oxygen = int(hex_data[22:26], 16)/100.0         #溶氧值
