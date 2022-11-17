@@ -20,14 +20,19 @@ def checkSignature(signature, timestamp, nonce):
     token = '32f93c09ffef7e3b8ca3c276ddb1ad6c3dd23ae0bed4f364f12ac5fd98341f71'
     arr = [token, timestamp, nonce]
     arr.sort()
-    newarr = ''.join(arr)
-    res = sha1().hexdigest(newarr)
-    return True if res==signature else False
+    hexsha1 = sha1()
+    map(hexsha1.update, arr)
+    hashcode = hexsha1.hexdigest()
+    # newarr = ''.join(arr)
+    # res = sha1().hexdigest(newarr)
+    return True if hashcode==signature else False
 
 
 @router.get('/weixinCheckToken')
-async def weixin_check_token(wxreq: WechatRequest):
-    res = checkSignature(wxreq.signature, wxreq.timestamp, wxreq.nonce)
-    return wxreq.echostr if res else False
+async def weixin_check_token(signature: str, timestamp: str,nonce: str,echostr: str):
+    logger.debug(f'signature:{signature}')
+    res = checkSignature(signature, timestamp, nonce)
+    logger.debug(f'checkresult:{res}')
+    return echostr if res else False
 
 
