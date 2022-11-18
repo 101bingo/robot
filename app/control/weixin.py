@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from fastapi.security import OAuth2PasswordBearer,OAuth2PasswordRequestForm
 from pydantic import BaseModel
 
@@ -31,6 +31,7 @@ def checkSignature(signature, timestamp, nonce):
 async def weixin_check_token(signature: str, timestamp: str,nonce: str,echostr: str):
     res = checkSignature(signature, timestamp, nonce)
     logger.debug(f'checkresult:{res}')
-    return echostr if res else False
+    ret_str = echostr if res else ''
+    return Response(ret_str, media_type='text/html;charset=utf-8')
 
 
