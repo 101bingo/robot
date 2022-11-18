@@ -17,7 +17,7 @@ class WechatRequest(BaseModel):
     echostr: str
 
 def checkSignature(signature, timestamp, nonce):
-    token = '32f93c09ffef7e3b8ca3c276ddb1ad6c3dd23ae0bed4f364f12ac5fd98341f71'
+    token = '32f93c09ffef7e3b8ca3c276ddb1ad6c'
     arr = [token, timestamp, nonce]
     arr.sort() # 排序
     hexsha1 = sha1()
