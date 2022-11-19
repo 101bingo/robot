@@ -52,7 +52,7 @@ async def weixin_msg(request: Request,signature: str, timestamp: str,nonce: str,
 '''
     logger.debug(msg)
     # ret_str = openid if openid else ''
-    return Response(ret_str)
+    return Response(ret_str, media_type='text/xml;charset=utf-8')
 
 
 
