@@ -18,7 +18,7 @@ class WechatRequest(BaseModel):
     signature: str
     timestamp: str
     nonce: str
-    echostr: str
+    openid: str
 
 def checkSignature(signature, timestamp, nonce):
     token = '32f93c09ffef7e3b8ca3c276ddb1ad6c'
@@ -38,6 +38,10 @@ async def weixin_check_token(signature: str, timestamp: str,nonce: str,echostr: 
     ret_str = echostr if res else ''
     return Response(ret_str, media_type='text/html;charset=utf-8')
 
+@router.post('/weixinCheckToken')
+async def weixin_msg(req_msg: WechatRequest):
+    ret_str = req_msg.openid if req_msg.openid else ''
+    return Response(ret_str, media_type='text/html;charset=utf-8')
 
 
 
