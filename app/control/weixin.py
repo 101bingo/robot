@@ -129,21 +129,23 @@ async def weixin_check_token(signature: str, timestamp: str,nonce: str,echostr: 
 @router.post('/weixinCheckToken')
 async def weixin_msg(request: Request,signature: str, timestamp: str,nonce: str, openid: Union[str, None]=None):
     msg = await request.body()
+#     msg = '''
+#     <xml>
+#     <ToUserName><![CDATA[toUser]]></ToUserName>
+#     <FromUserName><![CDATA[fromUser]]></FromUserName>
+#     <CreateTime>12345678</CreateTime>
+#     <MsgType><![CDATA[text]]></MsgType>
+#     <Content><![CDATA[你好]]></Content>
+#     </xml>
+# '''
     if msg:
         request_msg = xmltodict.parse(msg)
-        text_content = request_msg['Content']
-        user_openid = request_msg['FromUserName']
+        xml_data = request_msg.get('xml')
+        logger.debug(xml_data)
+        text_content = xml_data['Content']
+        user_openid = xml_data['FromUserName']
         logger.debug(f'text_content:{text_content}')
         send_msg(user_openid, '报警已关闭！')
-    ret_str = '''
-    <xml>
-    <ToUserName><![CDATA[toUser]]></ToUserName>
-    <FromUserName><![CDATA[fromUser]]></FromUserName>
-    <CreateTime>12345678</CreateTime>
-    <MsgType><![CDATA[text]]></MsgType>
-    <Content><![CDATA[你好]]></Content>
-    </xml>
-'''
     logger.debug(msg)
     # ret_str = openid if openid else ''
     ret_str = 'success'
