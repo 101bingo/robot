@@ -39,8 +39,8 @@ async def weixin_check_token(signature: str, timestamp: str,nonce: str,echostr: 
     return Response(ret_str, media_type='text/html;charset=utf-8')
 
 @router.post('/weixinCheckToken')
-async def weixin_msg(req_msg: WechatRequest):
-    ret_str = req_msg.openid if req_msg.openid else ''
+async def weixin_msg(signature: str, timestamp: str,nonce: str, openid: Union[str, None]=None):
+    ret_str = openid if openid else ''
     return Response(ret_str)
 
 
