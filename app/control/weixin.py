@@ -41,8 +41,17 @@ async def weixin_check_token(signature: str, timestamp: str,nonce: str,echostr: 
 @router.post('/weixinCheckToken')
 async def weixin_msg(request: Request,signature: str, timestamp: str,nonce: str, openid: Union[str, None]=None):
     msg = await request.body()
+    ret_str = '''
+    <xml>
+    <ToUserName><![CDATA[toUser]]></ToUserName>
+    <FromUserName><![CDATA[fromUser]]></FromUserName>
+    <CreateTime>12345678</CreateTime>
+    <MsgType><![CDATA[text]]></MsgType>
+    <Content><![CDATA[你好]]></Content>
+    </xml>
+'''
     logger.debug(msg)
-    ret_str = openid if openid else ''
+    # ret_str = openid if openid else ''
     return Response(ret_str)
 
 
