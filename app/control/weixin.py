@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Response
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from fastapi.security import OAuth2PasswordBearer,OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from typing import Union
@@ -39,7 +39,9 @@ async def weixin_check_token(signature: str, timestamp: str,nonce: str,echostr: 
     return Response(ret_str, media_type='text/html;charset=utf-8')
 
 @router.post('/weixinCheckToken')
-async def weixin_msg(signature: str, timestamp: str,nonce: str, openid: Union[str, None]=None):
+async def weixin_msg(request: Request,signature: str, timestamp: str,nonce: str, openid: Union[str, None]=None):
+    msg = await request.body()
+    logger.debug(msg)
     ret_str = openid if openid else ''
     return Response(ret_str)
 
