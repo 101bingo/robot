@@ -5,6 +5,7 @@ from typing import Union
 
 import requests
 import json
+import xmltodict
 from loguru import logger
 
 from hashlib import sha1
@@ -31,29 +32,6 @@ def checkSignature(signature, timestamp, nonce):
     return True if hashcode==signature else False
 
 
-@router.get('/weixinCheckToken')
-async def weixin_check_token(signature: str, timestamp: str,nonce: str,echostr: Union[str, None]=None, openid: Union[str, None]=None):
-    res = checkSignature(signature, timestamp, nonce)
-    logger.debug(f'checkresult:{res}')
-    ret_str = echostr if res else ''
-    return Response(ret_str, media_type='text/html;charset=utf-8')
-
-@router.post('/weixinCheckToken')
-async def weixin_msg(request: Request,signature: str, timestamp: str,nonce: str, openid: Union[str, None]=None):
-    msg = await request.body()
-    ret_str = '''
-    <xml>
-    <ToUserName><![CDATA[toUser]]></ToUserName>
-    <FromUserName><![CDATA[fromUser]]></FromUserName>
-    <CreateTime>12345678</CreateTime>
-    <MsgType><![CDATA[text]]></MsgType>
-    <Content><![CDATA[你好]]></Content>
-    </xml>
-'''
-    logger.debug(msg)
-    # ret_str = openid if openid else ''
-    ret_str = 'success'
-    return Response(ret_str, media_type='text/xml;charset=utf-8')
 
 
 
@@ -139,3 +117,34 @@ def send_msg_by_temple(date_time, oxygen, temper):
         response = requests.post(url=send_msg_url, params={'access_token':access_token}, data=bytes(json.dumps(body, ensure_ascii=False), encoding='utf-8'))
         result = response.json()
         logger.debug(result)
+
+
+@router.get('/weixinCheckToken')
+async def weixin_check_token(signature: str, timestamp: str,nonce: str,echostr: Union[str, None]=None, openid: Union[str, None]=None):
+    res = checkSignature(signature, timestamp, nonce)
+    logger.debug(f'checkresult:{res}')
+    ret_str = echostr if res else ''
+    return Response(ret_str, media_type='text/html;charset=utf-8')
+
+@router.post('/weixinCheckToken')
+async def weixin_msg(request: Request,signature: str, timestamp: str,nonce: str, openid: Union[str, None]=None):
+    msg = await request.body()
+    if msg:
+        request_msg = xmltodict.parse(msg)
+        text_content = request_msg['Content']
+        user_openid = request_msg['FromUserName']
+        logger.debug(f'text_content:{text_content}')
+        send_msg(user_openid, '报警已关闭！')
+    ret_str = '''
+    <xml>
+    <ToUserName><![CDATA[toUser]]></ToUserName>
+    <FromUserName><![CDATA[fromUser]]></FromUserName>
+    <CreateTime>12345678</CreateTime>
+    <MsgType><![CDATA[text]]></MsgType>
+    <Content><![CDATA[你好]]></Content>
+    </xml>
+'''
+    logger.debug(msg)
+    # ret_str = openid if openid else ''
+    ret_str = 'success'
+    return Response(ret_str, media_type='text/xml;charset=utf-8')
