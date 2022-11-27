@@ -1,5 +1,5 @@
 from datetime import datetime
-from socket import AF_INET, SO_REUSEADDR, SOCK_STREAM, SOL_SOCKET,socket,SO_KEEPALIVE,SIO_KEEPALIVE_VALS,error
+from socket import AF_INET, SO_REUSEADDR, SOCK_STREAM, SOL_SOCKET,socket
 from fastapi import FastAPI,WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
