@@ -94,34 +94,38 @@ def send_msg(openid, msg):
 
     print(result)
 
-def send_msg_by_temple(date_time, oxygen, temper):
+def send_msg_by_temple(user_openid, date_time, oxygen, temper):
     # send_msg_url = 'https://api.weixin.qq.com/cgi-bin/message/subscribe/bizsend'
     send_msg_url = 'https://api.weixin.qq.com/cgi-bin/message/template/send'
     # user_list = get_user_openid()
-    user_list = ['oZl2w6tfUnaJVFi3Bhnbj42KIhew', 'oZl2w6mdnuZuRCgjC9cZ8CkcacR4']
-    for user_openid in user_list:
-        body = {
-            'touser': user_openid,
-            'template_id': 'mTxYHJBK-BqnGwvTX4jFUfUfh3F6kRmWcTTumj6BqbQ',
-            "url":"http://42.193.138.254:8083/", #跳转地址
-            "topcolor":"#173177",
-            "data": {
-                "date_time": {
-                    "value": str(date_time),
-                    "color": "#173177"
-                },
-                "oxygen": {
-                    "value": f"{oxygen} mg/L",
-                    "color": "#d96459"
-                },
-                "temper": {
-                    "value": f"{temper}℃"
-                }
+    body = {
+        'touser': user_openid,
+        'template_id': 'mTxYHJBK-BqnGwvTX4jFUfUfh3F6kRmWcTTumj6BqbQ',
+        "url":"http://42.193.138.254:8083/", #跳转地址
+        "topcolor":"#173177",
+        "data": {
+            "date_time": {
+                "value": str(date_time),
+                "color": "#173177"
+            },
+            "oxygen": {
+                "value": f"{oxygen} mg/L",
+                "color": "#d96459"
+            },
+            "temper": {
+                "value": f"{temper}℃"
             }
         }
-        response = requests.post(url=send_msg_url, params={'access_token':access_token}, data=bytes(json.dumps(body, ensure_ascii=False), encoding='utf-8'))
-        result = response.json()
-        logger.debug(result)
+    }
+    response = requests.post(url=send_msg_url, params={'access_token':access_token}, data=bytes(json.dumps(body, ensure_ascii=False), encoding='utf-8'))
+    result = response.json()
+    logger.debug(result)
+
+def broadcast_msg_by_temple(date_time, oxygen, temper):
+    # user_list = get_user_openid()
+    user_list = ['oZl2w6tfUnaJVFi3Bhnbj42KIhew', 'oZl2w6mdnuZuRCgjC9cZ8CkcacR4']
+    for user_openid in user_list:
+        send_msg_by_temple(user_openid, date_time, oxygen, temper)
 
 def init_warning_flag():
     global is_stop_warning
@@ -134,7 +138,7 @@ def oxygen_warning(date_time, oxygen, temper):
         get_global_access_token()
     while not is_stop_warning:
         logger.debug(f'oxygen_warning stop flag:{is_stop_warning}')
-        send_msg_by_temple(date_time, oxygen, temper)
+        broadcast_msg_by_temple(date_time, oxygen, temper)
         time.sleep(3)
 
 def oxygen_threading(date_time, oxygen, temper):
@@ -215,14 +219,23 @@ async def weixin_msg(request: Request,signature: str, timestamp: str,nonce: str,
 #     </xml>
 # '''
     if msg:
-        is_stop_warning = True
         request_msg = xmltodict.parse(msg)
         xml_data = request_msg.get('xml')
         logger.debug(xml_data)
-        text_content = xml_data['Content']
-        user_openid = xml_data['FromUserName']
-        logger.debug(f'text_content:{text_content}')
-        send_msg(user_openid, '报警已关闭！')
-    # logger.debug(msg)
-    ret_str = 'success'
-    return Response(ret_str, media_type='text/xml;charset=utf-8')
+        msgtype = xml_data.get('MsgType')
+        if msgtype=='text':
+            is_stop_warning = True
+            text_content = xml_data['Content']
+            user_openid = xml_data['FromUserName']
+            # 查询当前数据，后续增加
+            # if text_content=='000':
+            #     send_msg_by_temple(user_openid)
+            logger.debug(f'用户[{user_openid}]发送消息停止:{text_content}')
+            send_msg(user_openid, '报警已关闭！')
+            # logger.debug(msg)
+            ret_str = 'success'
+            return Response(ret_str, media_type='text/xml;charset=utf-8')
+        if msgtype=='event':
+            msgstatus = xml_data.get('Status')
+            user_openid = xml_data.get('FromUserName')
+            logger.debug(f'用户[{user_openid}]-Msg send status:{msgstatus}')

@@ -18,7 +18,6 @@ from models.fish_model import add_oxygen_data_per_minute
 from control.login import *
 from control.ws import manager
 from scheduler.write_mysql_job import init_scheduler
-from control.weixin import send_msg_by_temple
 
 # logger.add('/var/log/robot/service.log', rotation='50 MB')
 logger.add(r'F:\WORK\code\debug\service.log', rotation='50 MB')
