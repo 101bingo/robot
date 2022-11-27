@@ -1,5 +1,5 @@
 from datetime import datetime
-from socket import AF_INET, SO_REUSEADDR, SOCK_STREAM, SOL_SOCKET,socket
+from socket import AF_INET, SO_REUSEADDR, SOCK_STREAM, SOL_SOCKET,socket,SO_KEEPALIVE,SIO_KEEPALIVE_VALS,error
 from fastapi import FastAPI,WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -14,13 +14,19 @@ from collections import deque
 
 from router.api import api_router
 from control.fish_run import cmd_deque,live_data_deque
+from models.fish_model import add_oxygen_data_per_minute
 from control.login import *
 from control.ws import manager
+from scheduler.write_mysql_job import init_scheduler
+from control.weixin import send_msg_by_temple
 
+# logger.add('/var/log/robot/service.log', rotation='50 MB')
+logger.add(r'F:\WORK\code\debug\service.log', rotation='50 MB')
 tcp_deque = deque()       # tcp消息队列
+tcp_deque_backup = deque()       # tcp消息队列备份
 # tcp_deque = multiprocessing.Queue()       # tcp消息队列
 IS_TCP_START = 0
-
+RESTART_FLAG = 0
 
 app = FastAPI()
 # 入口添加api_router
@@ -43,71 +49,29 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
+@app.on_event('startup')
+def init_scheduler_before():
+    """ 初始化定时任务 """
+    logger.debug('start init scheduler')
+    init_scheduler(tcp_deque_backup)
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    # await websocket.accept()
     await manager.connect(websocket)
+    data_to_mysql = {}
     msg_key = ['date_time', 'temper', 'oxygen_perc', 'oxygen', 'count_time','is_ready_flag']
     while True:
-        # data = await websocket.receive_text()
-        # await websocket.send_text(f"hello:{data}")
-        # time.sleep(1)
-        # oxygen = round(random.uniform(3.0,20.0),1)
-        # temperature = round(random.uniform(20.0,30.0),1)
-        # data_dict = {
-        #     'oxygen':oxygen,
-        #     'temperature':temperature
-        # }
-        # await websocket.send_json(data_dict)
-        # if live_data_deque:
-        #     print(11111111111111)
-        #     msg = live_data_deque.popleft()
-        #     print('msg:', msg)
-        #     data_dict = {
-        #         'oxygen':msg[0]/10.0,
-        #         'temperature':msg[1]/10.0
-        #     }
-        #     await websocket.send_json(data_dict)
-
-        # timeNow, temper, oxygen_perc, oxygen, count_time, is_ready_flag
-        # logger.debug('11111111111111')
-        # data = await websocket.receive_text()
-        # logger.debug('22222222222222')
-        # if data=='ping':
-        #     await websocket.send_text('pong')
         if tcp_deque:
             msg = tcp_deque.popleft()
             data_dict = dict(zip(msg_key, msg))
-            # await websocket.send_json(data_dict)
+            date_time = datetime.strptime(data_dict['date_time'], '%Y-%m-%d %H:%M:%S')
+            data_to_mysql['date_time'] = date_time
+            data_to_mysql['temper'] = data_dict['temper']
+            data_to_mysql['oxygen'] = data_dict['oxygen']
+            data_to_mysql['oxygen_perc'] = data_dict['oxygen_perc']
             await manager.broadcast(data_dict)
         else:
             await asyncio.sleep(0.01)
-
-# @app.websocket("/ws")
-# async def websocket_endpoint(websocket: WebSocket):
-#     await manager.connect(websocket)
-#     try:
-#         while True:
-#             time.sleep(1)
-#             # data = await websocket.receive_text()
-#             oxygen = round(random.uniform(3.0,20.0),1)
-#             temperature = round(random.uniform(20.0,30.0),1)
-#             data_dict = {
-#                 'oxygen':oxygen,
-#                 'temperature':temperature
-#             }
-#             logger.info(str(data_dict))
-#             if manager.active_connections:
-#                 await manager.broadcast(data_dict)
-#             if live_data_deque:
-#                 print(11111111111111)
-#                 msg = live_data_deque.popleft()
-#                 print('msg:', msg)
-#                 await websocket.send_json(data_dict)
-#             else:
-#                 await asyncio.sleep(0.01)
-#     except WebSocketDisconnect:
-#         manager.disconnect(websocket)
 
 @app.websocket("/sendcmd")
 async def websocket_send(websocket: WebSocket):
@@ -146,17 +110,23 @@ def testtcprecv():
     else:
         logger.debug('tcp deque is empty')
 
+@app.get('/testrestart')
+def test_restart():
+    global RESTART_FLAG
+    RESTART_FLAG = 1
+
 @app.get('/addtcpdata')
-def add_tcp_data():
+async def add_tcp_data():
     import random
     timeNow = datetime.now()
     timeNow = datetime.strftime(timeNow, '%Y-%m-%d %H:%M:%S')
     temper = round(random.uniform(20, 30), 2)
     oxygen_perc = round(random.uniform(98, 120), 2)
-    oxygen = round(random.uniform(7, 10), 2)
+    oxygen = round(random.uniform(1, 5), 2)
     count_time = random.randint(0,5)
     is_ready_flag = random.choice([0,1])
     tcp_deque.append([timeNow, temper, oxygen_perc, oxygen, count_time, is_ready_flag])
+    tcp_deque_backup.append([timeNow, temper, oxygen_perc, oxygen, count_time, is_ready_flag])
 
 @app.get('/startTcp')
 def start_tcp_server():
@@ -165,7 +135,7 @@ def start_tcp_server():
         return {'res':0, 'msg':'tcp server is already started'}
     else:
         IS_TCP_START = 1
-        thd_tcp = threading.Thread(target=tcpworker, args=(tcp_deque,))
+        thd_tcp = threading.Thread(target=tcpworker)
         thd_tcp.setDaemon(True) #设置守护线程(主线程关闭后，子线程自动销毁)
         thd_tcp.start()
 
@@ -182,35 +152,48 @@ def server():
 
 def recv_msg(tcp_client, client_address):
     while True:
-        client_text = tcp_client.recv(64)
-        if client_text:
-            logger.debug(f'[{client_address}]->recv:{client_text}')
-            hex_data = client_text.hex()
-            func_key = hex_data[2:4]
-            if func_key in ['83','90']:
-                logger.warning('响应数据异常')
+        try:
+            client_text = tcp_client.recv(64)
+            if client_text:
+                logger.debug(f'client_text_length:{len(client_text)}')
+                logger.debug(f'[{client_address}]->recv:{client_text}')
+                continue
+                hex_data = client_text.hex()
+                func_key = hex_data[2:4]
+                if func_key in ['03']:
+                    timeNow = datetime.now()
+                    timeNow = datetime.strftime(timeNow, '%Y-%m-%d %H:%M:%S')
+                    temper = round(int(hex_data[6:10], 16)/100.0 - 50, 2)          #温度值
+                    oxygen_perc = int(hex_data[14:18], 16)/100.0    #溶氧比
+                    oxygen = int(hex_data[22:26], 16)/100.0         #溶氧值
+                    count_time = int(hex_data[30:34],16)                   #倒计时
+                    is_ready_flag = int(hex_data[34:38],16)                #标识位
+                    total_data = [timeNow, temper, oxygen_perc, oxygen, count_time, is_ready_flag]
+                    tcp_deque.append(total_data)
+                    tcp_deque_backup.append(total_data)
+                else:
+                    logger.warning(f'响应数据异常：{client_text}')
             else:
-                timeNow = datetime.now()
-                timeNow = datetime.strftime(timeNow, '%Y-%m-%d %H:%M:%S')
-                temper = round(int(hex_data[6:10], 16)/100.0 - 50, 2)          #温度值
-                oxygen_perc = int(hex_data[14:18], 16)/100.0    #溶氧比
-                oxygen = int(hex_data[22:26], 16)/100.0         #溶氧值
-                count_time = int(hex_data[30:34],16)                   #倒计时
-                is_ready_flag = int(hex_data[34:38],16)                #标识位
-                tcp_deque.append([timeNow, temper, oxygen_perc, oxygen, count_time, is_ready_flag])
-                # tcp_deque.append([timeNow,oxygen])
-                # tcp_deque.append(recv)
-        else:
-            logger.debug(f'[{client_address}]->status:已下线')
+                logger.debug(f'[{client_address}]->status:已下线')
+                logger.debug(f"client_text:{client_text}")
+                tcp_client.close()
+                break
+        except ConnectionResetError: # 捕捉客户端异常断开
+            logger.debug(f'[{client_address}]->status:已断开连接')
             tcp_client.close()
             break
 
-def tcpworker(tcp_deque: deque):
+def tcpworker():
     IP_ADDRESS = '42.193.138.254'
     SERVER_PORT = 6111
     tcp_server = socket(AF_INET, SOCK_STREAM)
     #设置端口复用，使程序退出后端口马上释放
     tcp_server.setsockopt(SOL_SOCKET, SO_REUSEADDR, True)
+
+    # tcp_server.setsockopt(SOL_SOCKET, SO_KEEPALIVE, True)
+    # tcp_server.ioctl(
+    #     SIO_KEEPALIVE_VALS,(1,60*1000,30*1000)
+    # )
 
     #绑定端口
     tcp_server.bind(('', SERVER_PORT))
@@ -222,27 +205,6 @@ def tcpworker(tcp_deque: deque):
         # 设置守护线程
         t1.setDaemon(True)
         t1.start()
-
-        # if reset:
-        #     tcp_client.send(b'reset')
-        # recv = tcp_client.recv(64)
-        # logger.debug(f'[{client_address}]->recv:{recv}')
-        # if len(recv)>0:
-        #     hex_data = recv.hex()
-        #     func_key = hex_data[2:4]
-        #     if func_key in ['83','90']:
-        #         logger.warning('响应数据异常')
-        #     else:
-        #         timeNow = datetime.now().__str__()
-        #         temper = round(int(hex_data[6:10], 16)/100.0 - 50, 2)          #温度值
-        #         oxygen_perc = int(hex_data[14:18], 16)/100.0    #溶氧比
-        #         oxygen = int(hex_data[22:26], 16)/100.0         #溶氧值
-        #         count_time = int(hex_data[30:34],16)                   #倒计时
-        #         is_ready_flag = int(hex_data[34:38],16)                #标识位
-        #         tcp_deque.append([timeNow, temper, oxygen_perc, oxygen, count_time, is_ready_flag])
-        #         # tcp_deque.append([timeNow,oxygen])
-        #         # tcp_deque.append(recv)
-        # tcp_client.close()
 
 
 if __name__ == "__main__":

@@ -1,18 +1,24 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from fastapi.security import OAuth2PasswordBearer,OAuth2PasswordRequestForm
 from pydantic import BaseModel
-from typing import Union
 
+from typing import Union
 import requests
 import json
 import xmltodict
 from loguru import logger
-
+import time
+from datetime import datetime
 from hashlib import sha1
+import threading
+
+from models.fish_model import add_setting_oxygen_limit_data,get_setting_oxygen_limit_data,get_oxygen_warning_data
 # 实际的子路由
 router = APIRouter()
 
+LIMIT_OXYGEN = 5
 access_token = None
+is_stop_warning = False
 
 # model
 class WechatRequest(BaseModel):
@@ -20,6 +26,10 @@ class WechatRequest(BaseModel):
     timestamp: str
     nonce: str
     openid: str
+
+class SetOxygenValue(BaseModel):
+    oxygenData: float
+    deviceInfo: str
 
 def checkSignature(signature, timestamp, nonce):
     token = '32f93c09ffef7e3b8ca3c276ddb1ad6c'
@@ -30,10 +40,6 @@ def checkSignature(signature, timestamp, nonce):
     hexsha1.update(newarr.encode('utf-8'))
     hashcode = hexsha1.hexdigest()
     return True if hashcode==signature else False
-
-
-
-
 
 def get_access_token():
     access_token_url = 'https://api.weixin.qq.com/cgi-bin/token'
@@ -49,10 +55,11 @@ def get_access_token():
         access_token = None
     return access_token
 
-def get_user_openid():
+def get_global_access_token():
     global access_token
     access_token = get_access_token()
-    # access_token = 'get_access_token'
+
+def get_user_openid():
     user_openid_url = 'https://api.weixin.qq.com/cgi-bin/user/get'
     params = {
         'access_token': access_token
@@ -75,7 +82,6 @@ def get_user_code():
 
 def send_msg(openid, msg):
     send_msg_url = 'https://api.weixin.qq.com/cgi-bin/message/custom/send'
-    access_token = get_access_token()
     body = {
         'touser': openid,
         'msgtype': 'text',
@@ -89,11 +95,10 @@ def send_msg(openid, msg):
     print(result)
 
 def send_msg_by_temple(date_time, oxygen, temper):
-    # global access_token
     # send_msg_url = 'https://api.weixin.qq.com/cgi-bin/message/subscribe/bizsend'
     send_msg_url = 'https://api.weixin.qq.com/cgi-bin/message/template/send'
-    # access_token = get_access_token()
-    user_list = get_user_openid()
+    # user_list = get_user_openid()
+    user_list = ['oZl2w6tfUnaJVFi3Bhnbj42KIhew', 'oZl2w6mdnuZuRCgjC9cZ8CkcacR4']
     for user_openid in user_list:
         body = {
             'touser': user_openid,
@@ -118,6 +123,76 @@ def send_msg_by_temple(date_time, oxygen, temper):
         result = response.json()
         logger.debug(result)
 
+def init_warning_flag():
+    global is_stop_warning
+    is_stop_warning = False
+
+def oxygen_warning(date_time, oxygen, temper):
+    global is_stop_warning
+    logger.debug(f'oxygen_warning stop flag:{is_stop_warning}')
+    if access_token==None:
+        get_global_access_token()
+    while not is_stop_warning:
+        logger.debug(f'oxygen_warning stop flag:{is_stop_warning}')
+        send_msg_by_temple(date_time, oxygen, temper)
+        time.sleep(3)
+
+def oxygen_threading(date_time, oxygen, temper):
+    # import threading
+    global th_oxygen
+    t1 = threading.Thread(target=oxygen_warning, args=(date_time, oxygen, temper))
+    t1.setDaemon(True)
+    t1.start()
+    
+
+@router.get('/getAccessToken')
+def get_access_token_api():
+    """ 获取access token接口的 """
+    get_global_access_token()
+
+@router.get('/stopWarning')
+def test_stop_warning():
+    global is_stop_warning
+    is_stop_warning = True
+
+@router.post('/setOxygenLimit')
+async def set_oxygen_limit(value: SetOxygenValue):
+    global LIMIT_OXYGEN
+    current_time = datetime.now()
+    LIMIT_OXYGEN = value.oxygenData
+    upload_data = {
+        'device_info': value.deviceInfo,
+        'oxygen_limit': LIMIT_OXYGEN,
+        'date_time': current_time
+    }
+    await add_setting_oxygen_limit_data(upload_data) # 写数据库
+    logger.info(f'Setting oxygen limit value: {value}')
+    return {'code':0,'msg': LIMIT_OXYGEN}
+
+@router.get('/getRecordOxygenLimit')
+async def get_oxygen_limit_record():
+    rst = await get_setting_oxygen_limit_data() # 读数据库
+    for res in rst:
+        logger.debug(res.date_time)
+        logger.debug(type(res.date_time))
+        res.date_time = str(res.date_time).replace('-', '/')
+    logger.info(f'get oxygen limit value: {rst}')
+    return {'code':0,'data': rst}
+
+@router.get('/getRecordOxygenWarning')
+async def get_oxygen_limit_record():
+    rst = await get_oxygen_warning_data() # 读数据库
+    for res in rst:
+        logger.debug(res.date_time)
+        logger.debug(type(res.date_time))
+        res.date_time = str(res.date_time).replace('-', '/')
+    logger.info(f'get oxygen warning: {rst}')
+    return {'code':0,'data': rst}
+
+@router.get('/getOxygenLimit')
+def get_oxygen_limit():
+    logger.info(f'get oxygen limit value: {LIMIT_OXYGEN}')
+    return {'code':0,'limit_oxygen': LIMIT_OXYGEN}
 
 @router.get('/weixinCheckToken')
 async def weixin_check_token(signature: str, timestamp: str,nonce: str,echostr: Union[str, None]=None, openid: Union[str, None]=None):
@@ -128,6 +203,7 @@ async def weixin_check_token(signature: str, timestamp: str,nonce: str,echostr: 
 
 @router.post('/weixinCheckToken')
 async def weixin_msg(request: Request,signature: str, timestamp: str,nonce: str, openid: Union[str, None]=None):
+    global is_stop_warning
     msg = await request.body()
 #     msg = '''
 #     <xml>
@@ -139,6 +215,7 @@ async def weixin_msg(request: Request,signature: str, timestamp: str,nonce: str,
 #     </xml>
 # '''
     if msg:
+        is_stop_warning = True
         request_msg = xmltodict.parse(msg)
         xml_data = request_msg.get('xml')
         logger.debug(xml_data)
@@ -146,7 +223,6 @@ async def weixin_msg(request: Request,signature: str, timestamp: str,nonce: str,
         user_openid = xml_data['FromUserName']
         logger.debug(f'text_content:{text_content}')
         send_msg(user_openid, '报警已关闭！')
-    logger.debug(msg)
-    # ret_str = openid if openid else ''
+    # logger.debug(msg)
     ret_str = 'success'
     return Response(ret_str, media_type='text/xml;charset=utf-8')

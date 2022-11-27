@@ -64,9 +64,10 @@ async def getOxygenOneHour(hours: int):
     logger.debug(str(data_temp))
     logger.debug(len(data_temp))
     logger.debug([res.oxygen_data for res in data_temp])
-    res = [[res.date_time.__str__(), res.oxygen_data] for res in data_temp]
-    logger.debug([[res.date_time.__str__(), res.oxygen_data] for res in data_temp])
-    return {'code':0, 'msg':'success', 'data':res}
+    res_oxy = [[res.date_time.__str__(), res.oxygen_data] for res in data_temp]
+    res_tem = [[res.date_time.__str__(), res.temperature] for res in data_temp]
+    # logger.debug(res)
+    return {'code':0, 'msg':'success', 'data':[res_oxy, res_tem]}
 
 @router.get('/getOxygendays/')
 async def getOxygendays(startDay: int, endDay: int):
@@ -78,9 +79,10 @@ async def getOxygendays(startDay: int, endDay: int):
     logger.debug(str(data_temp))
     logger.debug(len(data_temp))
     logger.debug([res.oxygen_data for res in data_temp])
-    res = [[res.date_time.__str__(), res.oxygen_data] for res in data_temp]
-    logger.debug([[res.date_time.__str__(), res.oxygen_data] for res in data_temp])
-    return {'code':0, 'msg':'success', 'data':res}
+    res_oxy = [[res.date_time.__str__(), res.oxygen_data] for res in data_temp]
+    res_tem = [[res.date_time.__str__(), res.temperature] for res in data_temp]
+    # logger.debug(res)
+    return {'code':0, 'msg':'success', 'data':[res_oxy, res_tem]}
 
 @router.get('/addData2')
 async def add_data2():
