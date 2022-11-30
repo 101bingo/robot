@@ -156,7 +156,7 @@ def recv_msg(tcp_client, client_address):
             if client_text:
                 logger.debug(f'client_text_length:{len(client_text)}')
                 logger.debug(f'[{client_address}]->recv:{client_text}')
-                continue
+                # continue
                 hex_data = client_text.hex()
                 func_key = hex_data[2:4]
                 if func_key in ['03']:
