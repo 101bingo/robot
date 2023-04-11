@@ -1,7 +1,9 @@
-from datetime import datetime
+from datetime import datetime,time
 from socket import AF_INET, SO_REUSEADDR, SOCK_STREAM, SOL_SOCKET,socket
-from fastapi import FastAPI,WebSocket, WebSocketDisconnect
+from fastapi import FastAPI,WebSocket, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+
+from fastapi_mqtt import FastMQTT,MQTTConfig
 
 import random
 from loguru import logger
@@ -11,18 +13,22 @@ import time
 import threading
 import multiprocessing
 from collections import deque
+from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 
 from router.api import api_router
 from control.fish_run import cmd_deque,live_data_deque
-from models.fish_model import add_oxygen_data_per_minute
+
 from control.login import *
 from control.ws import manager
 from scheduler.write_mysql_job import init_scheduler
 
-# logger.add('/var/log/robot/service.log', rotation='50 MB')
-logger.add(r'F:\WORK\code\debug\service.log', rotation='50 MB')
+logger.add('/var/log/robot/service.log', rotation='50 MB')
+# logger.add(r'F:\WORK\code\debug\service.log', rotation='50 MB')
 tcp_deque = deque()       # tcp消息队列
 tcp_deque_backup = deque()       # tcp消息队列备份
+ota_pkg_queue = deque()       # ota分包队列
+# pressure_deque = deque() #室温，大气压值
 # tcp_deque = multiprocessing.Queue()       # tcp消息队列
 IS_TCP_START = 0
 RESTART_FLAG = 0
@@ -48,6 +54,118 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
+mqtt_config = MQTTConfig(
+    host='42.193.138.254',
+    port='1883',
+    keepalive=60,
+    username='abc',
+    password='a123'
+)
+
+mqtt = FastMQTT(
+    config=mqtt_config
+)
+mqtt.init_app(app)
+
+@mqtt.on_connect()
+def connect(client, flags, rc, properties):
+    # mqtt.client.subscribe('LG8VRHZ5VR9LXK7C111A')
+    mqtt.client.subscribe('/fishmonitor/otaupgrade')
+    mqtt.client.subscribe('/fishmonitor/msg')
+    mqtt.client.subscribe('/fishmonitor/wethers')
+    mqtt.client.subscribe('/fishmonitor/oxygen')
+    logger.warning(f'Connected:{client} {flags} {rc} {properties}')
+
+@mqtt.on_message()
+async def message(client, topic, payload, qos, properties):
+    # print("Received message: ", datetime.now(),topic, payload, qos, properties)
+    if topic=='/fishmonitor/msg':
+        if payload.decode()=='PKGACK':
+            if ota_pkg_queue:
+                pkg = ota_pkg_queue.popleft()
+                mqtt.publish("/fishmonitor/otaupgrade", pkg)
+            else:
+                mqtt.publish("/fishmonitor/otaupgrade", bytes.fromhex("aa01aa01"))
+        else:
+            logger.warning(payload.decode())
+    # 处理气压信息，备份
+    # if topic=='/fishmonitor/wethers': #get wether info
+    #     wether_info = str(payload, encoding='utf8')
+    #     # print('wether info:', wether_info)
+    #     temperature_air, pressure = wether_info.split(',')
+    #     temperature_air = float(temperature_air)
+    #     pressure = float(pressure)
+    #     pressure_deque.append([temperature_air, pressure])
+    if topic=='/fishmonitor/oxygen':
+        payload = payload.decode()
+        *newload,tpAir,press = payload.split(',')
+        hex_data = [f'{hex(int(i,10))[2:]:0>2}' for i in newload]
+
+        func_key = hex_data[1]
+        if func_key in ['03']:
+            timeNow = datetime.now()
+            timeNow = datetime.strftime(timeNow, '%Y-%m-%d %H:%M:%S')
+            # temper = round(int(hex_data[6:10], 16)/100.0 - 50, 2)          #温度值
+            # oxygen_perc = int(hex_data[14:18], 16)/100.0    #溶氧比
+            # oxygen = int(hex_data[22:26], 16)/100.0         #溶氧值
+            # count_time = int(hex_data[30:34],16)                   #倒计时
+            # is_ready_flag = int(hex_data[34:38],16)                #标识位
+            temper = round(int(''.join(hex_data[3:5]), 16)/100.0 - 50, 2)          #温度值
+            oxygen_perc = int(''.join(hex_data[7:9]), 16)/100.0    #溶氧比
+            oxygen = int(''.join(hex_data[11:13]), 16)/100.0         #溶氧值
+            count_time = int(''.join(hex_data[15:17]),16)                   #倒计时
+            is_ready_flag = int(''.join(hex_data[17:19]),16)                #标识位
+            tpAir = round(float(tpAir), 2)          #温度值
+            press = round(float(press)/100, 2)          #大气压hPa
+            total_data = [timeNow, temper, oxygen_perc, oxygen, count_time, is_ready_flag, tpAir, press]
+            tcp_deque.append(total_data)
+            tcp_deque_backup.append(total_data)
+            # logger.debug(tcp_deque)
+        else:
+            logger.warning(f'响应数据异常：{payload}')
+
+@app.get("/publishmsg")
+async def publish_message():
+    # mqtt.publish("LG8VRHZ5VR9LXK7C111A", "Hello from Fastapi") #publishing mqtt topic
+    mqtt.publish("/fishmonitor/otaupgrade", "restartboot") #publishing mqtt topic
+
+    return {"result": True,"message":"Published" }
+
+@app.post("/otaupdate")
+async def ota_update(file: UploadFile):
+    from zlib import crc32
+    RECORD_SIZE = 100
+    ota_pkg_queue.clear()
+    filecontent = file.file.read()
+    file_len = len(filecontent)
+    filename = file.filename
+    save_path = f'F:\ota_test\{filename}'
+    CRC_VAVLUE = crc32(filecontent, 0) #CRC32校验值
+    OTA_START = 'ff55ff55'
+    OTA_HEAD = f'{OTA_START}{CRC_VAVLUE:08x}{file_len:04x}'
+
+    with open(save_path, 'wb') as f:
+        f.write(filecontent)
+    with open(save_path, 'r', encoding='utf8') as f:
+        records = iter(partial(f.read, RECORD_SIZE), '')
+        for r in records:
+            ota_pkg_queue.append(r)
+    
+    # msg = bytes.fromhex('ff55ff55d250d0ab19bd')
+    msg = bytes.fromhex(OTA_HEAD)
+    mqtt.publish("/fishmonitor/otaupgrade", msg)
+
+    return {"result": True,"message":"Published" }
+
+@app.post("/uploadfile/")
+async def create_uploadfile(file: UploadFile):
+    filecontent = file.file.read()
+    filename = file.filename
+    save_path = f'F:\ota_test\{filename}'
+    with open(save_path, 'wb') as f:
+        f.write(filecontent)
+    return {'filename': file.filename}
+
 @app.on_event('startup')
 def init_scheduler_before():
     """ 初始化定时任务 """
@@ -57,33 +175,14 @@ def init_scheduler_before():
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
-    data_to_mysql = {}
-    msg_key = ['date_time', 'temper', 'oxygen_perc', 'oxygen', 'count_time','is_ready_flag']
+    msg_key = ['date_time', 'temper', 'oxygen_perc', 'oxygen', 'count_time','is_ready_flag', 'temp_air', 'pressure']
     while True:
         if tcp_deque:
             msg = tcp_deque.popleft()
             data_dict = dict(zip(msg_key, msg))
-            date_time = datetime.strptime(data_dict['date_time'], '%Y-%m-%d %H:%M:%S')
-            data_to_mysql['date_time'] = date_time
-            data_to_mysql['temper'] = data_dict['temper']
-            data_to_mysql['oxygen'] = data_dict['oxygen']
-            data_to_mysql['oxygen_perc'] = data_dict['oxygen_perc']
             await manager.broadcast(data_dict)
         else:
             await asyncio.sleep(0.01)
-
-@app.websocket("/sendcmd")
-async def websocket_send(websocket: WebSocket):
-    try:
-        await websocket.accept()
-        while True:
-            data = await websocket.receive_text()
-            if cmd_deque:
-                cmd = cmd_deque.popleft()
-                await websocket.send_text(cmd)
-                data = await websocket.receive_text()
-    except Exception as e:
-        await websocket.close()
 
 @app.websocket("/livedata")
 async def websocket_send(websocket: WebSocket):
@@ -183,7 +282,7 @@ def recv_msg(tcp_client, client_address):
             break
 
 def tcpworker():
-    IP_ADDRESS = '42.193.138.254'
+    pool = ThreadPoolExecutor(10) # 最大客户端连接个数10
     SERVER_PORT = 6111
     tcp_server = socket(AF_INET, SOCK_STREAM)
     #设置端口复用，使程序退出后端口马上释放
@@ -200,16 +299,18 @@ def tcpworker():
     logger.debug(f'start tcp server success! Listen port:{SERVER_PORT}')
     while True:
         tcp_client, client_address = tcp_server.accept()
-        t1 = threading.Thread(target=recv_msg, args=(tcp_client,client_address))
-        # 设置守护线程
-        t1.setDaemon(True)
-        t1.start()
+        # 使用线程池防止攻击
+        pool.submit(recv_msg, tcp_client, client_address)
+        # t1 = threading.Thread(target=recv_msg, args=(tcp_client,client_address))
+        # # 设置守护线程
+        # t1.setDaemon(True)
+        # t1.start()
 
 
 if __name__ == "__main__":
     HOST = '0.0.0.0'
     PORT = 8002
-    uvicorn.run(app='main:app', host=HOST, port=PORT, reload=True, debug=True, workers=1)
+    uvicorn.run(app='main:app', host=HOST, port=PORT, reload=True, workers=1)
     # thd_server = multiprocessing.Process(target=server)
     # thd_tcp = multiprocessing.Process(target=tcpworker, args=(tcp_deque,))
     # thd_server.start()
