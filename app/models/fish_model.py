@@ -46,7 +46,7 @@ class IsWarmingStartRecord(Base):
     __tablename__ = "iswarningstartrecord"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(40)) #  记录名称
-    status = Column(int())  #  记录报警是否开启
+    status = Column(Integer)  #  记录报警是否开启
 
 async def add_oxygen_data_per_minute(oxygen_info):
     """ 每分钟添加溶氧数据到数据库 """
