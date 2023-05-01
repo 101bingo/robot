@@ -8,7 +8,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.jobstores.memory import MemoryJobStore
 from apscheduler.executors.pool import ThreadPoolExecutor
 
-from models.fish_model import add_oxygen_data_per_minute,add_oxygen_warning_data
+from models.fish_model import add_oxygen_data_per_minute,add_oxygen_warning_data,get_setting_oxygen_limit_data
 from control.weixin import oxygen_threading, init_warning_flag, get_global_access_token, is_stop_warning, LIMIT_OXYGEN
 
 # LIMIT_OXYGEN = 5
@@ -27,6 +27,9 @@ async def write_mysql_data(msg: deque, start_time: datetime):
         data_to_mysql['oxygen_perc'] = data[2]
         data_to_mysql['oxygen'] = data[3]
         data_to_mysql['oxygen_limit'] = LIMIT_OXYGEN
+        limit_oxygens = await get_setting_oxygen_limit_data()
+        logger.warning(f'limit_oxygens:{limit_oxygens}')
+        logger.warning(f'limit_oxygens type:{type(limit_oxygens)}')
         logger.warning(f'LIMIT_OXYGEN1:{LIMIT_OXYGEN}')
         if date_time>(start_time+timedelta(minutes=1)):
             start_time = date_time
