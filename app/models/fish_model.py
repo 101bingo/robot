@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from logging import exception
 from sqlalchemy import Column,Integer,String,Float,DateTime
-from sqlalchemy import select
+from sqlalchemy import select,update
 # import sys
 # print(sys.path)
 from db.database import Base,engine,async_SessionLocal
@@ -40,6 +40,13 @@ class OxygenWarningRecord(Base):
     temperature = Column(Float(4)) # 温度数据
     oxygen_limit = Column(Float(4)) # 氧限数据
     date_time = Column(DateTime())  # 设置时间
+
+class IsWarmingStartRecord(Base):
+    """ 记录氧限报警记录 """
+    __tablename__ = "iswarningstartrecord"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(40)) #  记录名称
+    status = Column(int())  #  记录报警是否开启
 
 async def add_oxygen_data_per_minute(oxygen_info):
     """ 每分钟添加溶氧数据到数据库 """
@@ -154,4 +161,20 @@ async def get_oxygen_warning_data():
         result = await session.execute(sql)
         data_info = result.scalars().all()
         return data_info
+    
+async def set_warning_status_data(value: int):
+    """ 设置报警状态 """
+    async with async_SessionLocal() as session:
+        sql = update(IsWarmingStartRecord).where(IsWarmingStartRecord.name=='iswarmingstart').values(status=value)
+        result = await session.execute(sql)
+        return result
+    
+async def get_warning_status_data():
+    """ 获取报警状态 """
+    async with async_SessionLocal() as session:
+        sql = select(IsWarmingStartRecord).where(IsWarmingStartRecord.name=='iswarmingstart')
+        result = await session.execute(sql)
+        data_info = result.scalars().all()
+        return data_info
+    
 # Base.metadata.create_all(engine)

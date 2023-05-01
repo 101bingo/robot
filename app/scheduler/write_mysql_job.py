@@ -8,8 +8,8 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.jobstores.memory import MemoryJobStore
 from apscheduler.executors.pool import ThreadPoolExecutor
 
-from models.fish_model import add_oxygen_data_per_minute,add_oxygen_warning_data,get_setting_oxygen_limit_data
-from control.weixin import oxygen_threading, init_warning_flag, get_global_access_token, is_stop_warning
+from models.fish_model import add_oxygen_data_per_minute,add_oxygen_warning_data,get_setting_oxygen_limit_data,get_warning_status_data
+from control.weixin import oxygen_threading, init_warning_flag, get_global_access_token
 
 # LIMIT_OXYGEN = 5
 LOW_COUNT = 0
@@ -32,26 +32,28 @@ async def write_mysql_data(msg: deque, start_time: datetime):
             data_to_mysql['oxygen_limit'] = LIMIT_OXYGEN
             start_time = date_time
 
-            logger.warning(f'LIMIT_OXYGEN2:{LIMIT_OXYGEN}')
             if data_to_mysql['oxygen']<LIMIT_OXYGEN:
                 LOW_COUNT += 1
             else:
                 LOW_COUNT = 0
             logger.warning(f'LIMIT_OXYGEN:{LIMIT_OXYGEN}')
             logger.warning(f'LOW_COUNT:{LOW_COUNT}')
-            if LOW_COUNT==THRESHOLD_VALUE and not is_stop_warning:
-                oxygen_threading(date_time, data[3], data[1])
-                await add_oxygen_warning_data(data_to_mysql)
-                LOW_COUNT = 0
-            logger.debug('start add data to mysql')
+            if LOW_COUNT==THRESHOLD_VALUE:
+                is_stop_warning = await get_warning_status_data()
+                if is_stop_warning[0].iswarmingstart==0:
+                    oxygen_threading(date_time, data[3], data[1])
+                    await add_oxygen_warning_data(data_to_mysql)
+                    LOW_COUNT = 0
+            logger.debug('Start add data to mysql')
             await add_oxygen_data_per_minute(data_to_mysql) #添加到数据库
-            logger.debug('end add data to mysql')
+            logger.debug('End add data to mysql')
 
 """ 每6小时初始化停止报警的标识 """
 async def init_stopflag_per_six_hours():
-    logger.debug('start init_stopflag_per_six_hours')
-    init_warning_flag()
-    logger.debug(f'is_stop_warning:{is_stop_warning}')
+    logger.debug('Start init_stopflag_per_six_hours')
+    await init_warning_flag()
+    # await set_warning_status_data(0) #设置为0
+    # logger.debug(f'is_stop_warning:{is_stop_warning}')
 
 """ 每2小时获取一次access token """
 async def init_access_token():

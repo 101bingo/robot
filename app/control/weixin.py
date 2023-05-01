@@ -12,7 +12,7 @@ from datetime import datetime
 from hashlib import sha1
 import threading
 
-from models.fish_model import add_setting_oxygen_limit_data,get_setting_oxygen_limit_data,get_oxygen_warning_data
+from models.fish_model import add_setting_oxygen_limit_data,get_setting_oxygen_limit_data,get_oxygen_warning_data,set_warning_status_data
 # 实际的子路由
 router = APIRouter()
 
@@ -58,6 +58,7 @@ def get_access_token():
 def get_global_access_token():
     global access_token
     access_token = get_access_token()
+    # logger.debug(f'get new access token:{access_token}')
 
 def get_user_openid():
     user_openid_url = 'https://api.weixin.qq.com/cgi-bin/user/get'
@@ -127,9 +128,11 @@ def broadcast_msg_by_temple(date_time, oxygen, temper):
     for user_openid in user_list:
         send_msg_by_temple(user_openid, date_time, oxygen, temper)
 
-def init_warning_flag():
+async def init_warning_flag():
     global is_stop_warning
     is_stop_warning = False
+    await set_warning_status_data(0) #设置为0
+
 
 def oxygen_warning(date_time, oxygen, temper):
     global is_stop_warning
@@ -155,9 +158,10 @@ def get_access_token_api():
     get_global_access_token()
 
 @router.get('/stopWarning')
-def test_stop_warning():
+async def test_stop_warning():
     global is_stop_warning
     is_stop_warning = True
+    await set_warning_status_data(1) #设置为0
 
 @router.post('/setOxygenLimit')
 async def set_oxygen_limit(value: SetOxygenValue):
@@ -225,6 +229,7 @@ async def weixin_msg(request: Request,signature: str, timestamp: str,nonce: str,
         msgtype = xml_data.get('MsgType')
         if msgtype=='text':
             is_stop_warning = True
+            await set_warning_status_data(1)
             text_content = xml_data['Content']
             user_openid = xml_data['FromUserName']
             # 查询当前数据，后续增加
