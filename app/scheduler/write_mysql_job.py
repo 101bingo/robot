@@ -27,9 +27,11 @@ async def write_mysql_data(msg: deque, start_time: datetime):
         data_to_mysql['oxygen_perc'] = data[2]
         data_to_mysql['oxygen'] = data[3]
         data_to_mysql['oxygen_limit'] = LIMIT_OXYGEN
+        logger.warning(f'LIMIT_OXYGEN1:{LIMIT_OXYGEN}')
         if date_time>(start_time+timedelta(minutes=1)):
             start_time = date_time
             # logger.warning(f'LOW_COUNT:{LOW_COUNT}')
+            logger.warning(f'LIMIT_OXYGEN2:{LIMIT_OXYGEN}')
             if data_to_mysql['oxygen']<LIMIT_OXYGEN:
                 LOW_COUNT += 1
             else:
