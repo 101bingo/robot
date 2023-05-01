@@ -19,6 +19,7 @@ router = APIRouter()
 LIMIT_OXYGEN = 5
 access_token = None
 is_stop_warning = False
+user_list = None
 
 # model
 class WechatRequest(BaseModel):
@@ -56,9 +57,10 @@ def get_access_token():
     return access_token
 
 def get_global_access_token():
-    global access_token
+    global access_token,user_list
     access_token = get_access_token()
     # logger.debug(f'get new access token:{access_token}')
+    user_list = get_user_openid() #获取所有用户
 
 def get_user_openid():
     user_openid_url = 'https://api.weixin.qq.com/cgi-bin/user/get'
@@ -124,7 +126,7 @@ def send_msg_by_temple(user_openid, date_time, oxygen, temper):
 
 def broadcast_msg_by_temple(date_time, oxygen, temper):
     # user_list = get_user_openid()
-    user_list = ['oZl2w6tfUnaJVFi3Bhnbj42KIhew', 'oZl2w6mdnuZuRCgjC9cZ8CkcacR4']
+    # user_list = ['oZl2w6tfUnaJVFi3Bhnbj42KIhew', 'oZl2w6mdnuZuRCgjC9cZ8CkcacR4']
     for user_openid in user_list:
         send_msg_by_temple(user_openid, date_time, oxygen, temper)
 
