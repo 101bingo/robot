@@ -9,7 +9,7 @@ from apscheduler.jobstores.memory import MemoryJobStore
 from apscheduler.executors.pool import ThreadPoolExecutor
 
 from models.fish_model import add_oxygen_data_per_minute,add_oxygen_warning_data,get_setting_oxygen_limit_data
-from control.weixin import oxygen_threading, init_warning_flag, get_global_access_token, is_stop_warning, LIMIT_OXYGEN
+from control.weixin import oxygen_threading, init_warning_flag, get_global_access_token, is_stop_warning
 
 # LIMIT_OXYGEN = 5
 LOW_COUNT = 0
@@ -26,14 +26,12 @@ async def write_mysql_data(msg: deque, start_time: datetime):
         data_to_mysql['temperature'] = data[1]
         data_to_mysql['oxygen_perc'] = data[2]
         data_to_mysql['oxygen'] = data[3]
-        data_to_mysql['oxygen_limit'] = LIMIT_OXYGEN
-        limit_oxygens = await get_setting_oxygen_limit_data()
-        logger.warning(f'limit_oxygens:{limit_oxygens}')
-        logger.warning(f'limit_oxygens type:{type(limit_oxygens)}')
-        logger.warning(f'LIMIT_OXYGEN1:{LIMIT_OXYGEN}')
         if date_time>(start_time+timedelta(minutes=1)):
+            limit_oxygens = await get_setting_oxygen_limit_data()
+            LIMIT_OXYGEN = limit_oxygens[0].oxygen_limit if limit_oxygens else 5 #获取氧限数据，默认初始值为5
+            data_to_mysql['oxygen_limit'] = LIMIT_OXYGEN
             start_time = date_time
-            # logger.warning(f'LOW_COUNT:{LOW_COUNT}')
+
             logger.warning(f'LIMIT_OXYGEN2:{LIMIT_OXYGEN}')
             if data_to_mysql['oxygen']<LIMIT_OXYGEN:
                 LOW_COUNT += 1
