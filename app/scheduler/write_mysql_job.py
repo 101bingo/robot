@@ -40,7 +40,7 @@ async def write_mysql_data(msg: deque, start_time: datetime):
             logger.warning(f'LOW_COUNT:{LOW_COUNT}')
             if LOW_COUNT==THRESHOLD_VALUE:
                 is_stop_warning = await get_warning_status_data()
-                if is_stop_warning[0].iswarmingstart==0:
+                if is_stop_warning[0].status==0:
                     oxygen_threading(date_time, data[3], data[1])
                     await add_oxygen_warning_data(data_to_mysql)
                     LOW_COUNT = 0
