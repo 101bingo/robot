@@ -81,7 +81,7 @@ def init_scheduler(msg_que: deque):
     # 写数据库任务，每1分钟存储一次数据
     scheduler.add_job(func=write_mysql_data, args=(msg_que, start_time), trigger='interval', minutes=1)
     # 初始化任务，每6小时初始化停止报警的标识
-    scheduler.add_job(func=init_stopflag_per_six_hours, trigger='interval', hours=6)
+    # scheduler.add_job(func=init_stopflag_per_six_hours, trigger='interval', hours=6)
     # 初始化任务，每2小时获取一次access token
     scheduler.add_job(func=init_access_token, trigger='interval', hours=2)
     # 启动调度器
